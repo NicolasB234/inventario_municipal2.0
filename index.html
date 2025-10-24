@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Gestión de Inventario Municipal</title>
+    <link rel="icon" type="image/png" href="img/logo_municipal.png">
+    <link href="styles.css" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body id="index-page">
+    <div id="sidebar-overlay"></div>
+
+    <div class="main-wrapper">
+        <header class="main-header">
+            <div class="header-left">
+                <button aria-label="Menu" class="header-btn" id="sidebar-toggle-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <button aria-label="Notificacion" class="not-button" id="notification-bell-btn">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-counter" id="notification-counter">0</span>
+                </button>
+
+                <div class="header-actions" style="position:relative;">
+                    <button id="header-actions-btn" class="header-btn" aria-haspopup="true" aria-expanded="false" title="Acciones de archivos">
+                        <i class="fas fa-file"></i>
+                    </button>
+                    <div id="header-actions-menu" class="dropdown-menu" style="display:none;">
+                        <button id="import-btn-header" class="button"><i class="fas fa-file-import"></i> Importar XLSX</button>
+                        <input type="file" id="xlsx-file-input-header" accept=".xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display: none;" />
+                        <button id="export-xlsx-header" class="button"><i class="fas fa-file-export"></i> Exportar XLSX</button>
+                        <button id="export-pdf-header" class="button"><i class="fas fa-file-pdf"></i> PDF INFORME</button>
+                    </div>
+                </div>
+
+            </div>
+            <div class="header-center">
+                <img src="img/logo_municipal.png" alt="Logo Municipalidad" class="logo-img">
+            </div>
+            <div class="header-right" id="header-right-container">
+                <div class="theme-selector-container">
+                    <label for="theme-selector"><i class="fas fa-palette"></i></label>
+                    <select id="theme-selector">
+                        <option value="light">☀️ Claro</option>
+                        <option value="dark-mode">🌙 Oscuro</option>
+                        <option value="night-mode">🦉 Nocturno</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+        <div class="container">
+            <aside class="sidebar">
+                <h2>Organigrama</h2>
+                <div class="sidebar-search-container">
+                    <input type="text" id="org-search-input" placeholder="&#xf002; Buscar área..." style="font-family: 'Open Sans', FontAwesome;">
+                </div>
+                <nav id="org-nav"></nav>
+            </aside>
+            <main class="content">
+                <header class="content-header">
+                    <h1 id="content-title">Bienvenido</h1>
+                    <div id="view-buttons">
+                        
+                        <button id="show-gallery-view-btn" class="view-btn">🖼️ Galería</button>
+                        <button id="show-table-view-btn" class="view-btn active">📊 Tabla</button>
+                        <button id="show-stats-view-btn" class="view-btn">📈 Estadísticas</button>
+                    </div>
+                </header>
+                
+                <div id="global-controls-container"></div>
+
+                <section id="inventory-section">
+                    <div id="table-view" class="view-section active">
+                        <p>Seleccione un área del organigrama para ver su inventario.</p>
+                    </div>
+                    <div id="gallery-view" class="view-section">
+                        <h2>Vista de Galería</h2>
+                        <div id="gallery-container" class="gallery-container">
+                        </div>
+                    </div>
+                    <div id="stats-view" class="view-section">
+                        <h2>Vista de Estadísticas</h2>
+                        <p>Esta funcionalidad estará disponible próximamente.</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <footer class="page-footer">
+        <img src="img/dev_logo.png" alt="Logo Desarrollador" class="dev-logo">
+        <span>Aplicación de Inventario Municipal.</span>
+    </footer>
+    
+    <div id="modal-agregar-item" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <button class="close-modal">✖</button>
+        <h2>Agregar Ítem</h2>
+        <form id="form-agregar-item" enctype="multipart/form-data">
+          <input type="hidden" name="id"> <input type="hidden" name="node_id"> <input type="hidden" name="existingImagePath">
+          
+          <div class="form-row" id="area-display-row" style="display: none;">
+            <label for="area-display-text">Área del Ítem</label>
+            <input type="text" id="area-display-text" disabled>
+          </div>
+
+          <div class="form-row" id="area-selection-row" style="display: none;">
+            <label for="area-search-input-modal">Área de Destino</label>
+            <div class="search-container">
+                <input type="text" id="area-search-input-modal" class="form-control" placeholder="Escriba para buscar un área..." autocomplete="off">
+                <div id="area-search-results-modal" class="search-results"></div>
+            </div>
+          </div>
+          <div class="form-row"><label for="form-name">Nombre</label><input type="text" id="form-name" name="name" placeholder="Nombre del ítem" required /></div>
+          <div class="form-row"><label for="form-quantity">Cantidad</label><input type="number" id="form-quantity" name="quantity" placeholder="Cantidad" required /></div>
+          <div class="form-row"><label for="form-category">Categoría</label><select id="form-category" name="category"></select></div>
+          <div class="form-row"><label for="form-incorporacion">Incorporación</label><input type="date" id="form-incorporacion" name="incorporacion" /></div>
+          <div class="form-row"><label for="form-description">Descripción</label><textarea id="form-description" name="description" placeholder="Descripción"></textarea></div>
+          <div class="form-row"><label for="form-status">Estado</label><select id="form-status" name="status"></select></div>
+          <div class="form-row"><label for="form-encargado">Encargado</label><input type="text" id="form-encargado" name="encargado" placeholder="Nombre del encargado" /></div>
+          
+          <div class="form-row">
+            <label for="form-itemImage">Imágenes (selección múltiple)</label>
+            <input type="file" id="form-itemImage" name="itemImage[]" accept="image/*" multiple />
+            <div id="imagePreviewContainer" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
+                </div>
+          </div>
+          <div class="form-row" style="justify-content: flex-end; flex-direction: row; gap: 10px;"><button type="button" id="cancel-item-btn" class="button">Cancelar</button><button type="submit" class="button">Guardar</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div id="image-modal" class="modal-overlay" style="display: none;">
+        <span class="close-modal-gallery">&times;</span>
+        <span class="prev-gallery-btn">&#10094;</span>
+        <span class="next-gallery-btn">&#10095;</span>
+        <div class="image-modal-container">
+            <img class="image-modal-content" id="modal-image" src="" alt="Imagen del ítem">
+            <div class="image-modal-details">
+                <h3 id="modal-item-name"></h3>
+                <p><strong>Descripción:</strong> <span id="modal-item-description"></span></p>
+                <hr>
+                <div class="details-grid">
+                    <p><strong>Categoría:</strong> <span id="modal-item-category"></span></p>
+                    <p><strong>Cantidad:</strong> <span id="modal-item-quantity"></span></p>
+                    <p><strong>Estado:</strong> <span id="modal-item-status"></span></p>
+                    <p><strong>Incorporación:</strong> <span id="modal-item-date"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    
+    <script src="js/script.js" type="module" defer></script>
+    <script src="js/theme-switcher.js" defer></script>
+</body>
+</html>

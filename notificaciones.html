@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Actividad - Inventario</title>
+    <link rel="icon" type="image/png" href="img/icono_municipal.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body id="notifications-page">
+
+    <style>
+        /* 🎨 Estilos exclusivos para los filtros de historial */
+        #notifications-page .log-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        #notifications-page .log-controls label {
+            font-weight: 600;
+            font-size: 14px;
+            margin-right: 6px;
+            color: #333;
+        }
+
+        #notifications-page .log-controls input[type="text"],
+        #notifications-page .log-controls input[type="date"],
+        #notifications-page .log-controls select {
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            flex: 1 1 180px;
+            transition: all 0.2s ease;
+        }
+
+        #notifications-page .log-controls input[type="text"]:focus,
+        #notifications-page .log-controls input[type="date"]:focus,
+        #notifications-page .log-controls select:focus {
+            border-color: #0077cc;
+            outline: none;
+            box-shadow: 0 0 4px rgba(0,119,204,0.3);
+        }
+
+        #notifications-page .log-container h1 {
+            margin-bottom: 10px;
+        }
+
+        #notifications-page #logs-content {
+            margin-top: 20px;
+        }
+
+        /* 📝 Opcional: estilo para los resultados de logs */
+        #notifications-page .log-item {
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #e5e5e5;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            font-size: 14px;
+        }
+
+        #notifications-page .log-item:hover {
+            background: #f0f7ff;
+            border-color: #cce0ff;
+        }
+
+        /* tabla simple para los logs */
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .log-table th, .log-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+        .log-table thead th {
+            background: #fafafa;
+            font-weight: 700;
+        }
+    </style>
+
+    <header class="main-header">
+        <div class="header-left"></div>
+        <div class="header-center">
+            <img src="img/logo_municipal.png" alt="Logo Municipalidad" class="logo-img">
+        </div>
+        <div class="header-right" id="header-right-container">
+            <div class="theme-selector-container">
+                <label for="theme-selector"><i class="fas fa-palette"></i></label>
+                <select id="theme-selector">
+                    <option value="light">☀️ Claro</option>
+                    <option value="dark-mode">🌙 Oscuro</option>
+                    <option value="night-mode">🦉 Nocturno</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <div class="log-container">
+        <a href="index.html" class="button back-link"><i class="fas fa-arrow-left"></i> Volver al Inventario</a>
+        <h1>Historial de Actividad del Sistema</h1>
+
+        <!-- 🔍 Controles de búsqueda -->
+        <div class="log-controls">
+            <input type="text" id="search-input" placeholder="Buscar por texto...">
+
+            <label for="date-from">Desde:</label>
+            <input type="date" id="date-from">
+
+            <label for="date-to">Hasta:</label>
+            <input type="date" id="date-to">
+
+            <label for="user-filter">Usuario:</label>
+            <input type="text" id="user-filter" placeholder="Filtrar usuario...">
+
+            <label for="action-filter">Acción:</label>
+         <label for="action-filter">Acción:</label>
+<select id="action-filter">
+    <option value="">Todas</option>
+    <option value="agregado">Agregados</option>
+    <option value="editado">Editados</option>
+    <option value="importado">Importados</option>
+    <option value="baja">Bajas</option>
+    <option value="traspaso">Traspasos</option>
+</select>
+        </div>
+
+        <div id="logs-content">
+            <p>Cargando registros...</p>
+        </div>
+    </div>
+    
+    <footer class="page-footer">
+        <img src="img/dev_logo.png" alt="Logo Desarrollador" class="dev-logo">
+        <span>Desarrollado por el equipo de Sistemas de la Municipalidad de Curuzú Cuatiá.</span>
+    </footer>
+    
+    <script src="js/notificaciones.js"></script>
+    <script src="js/theme-switcher.js"></script>
+
+</body>
+</html>
