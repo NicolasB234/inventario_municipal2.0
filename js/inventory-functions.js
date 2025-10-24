@@ -74,7 +74,7 @@ export const statusOptions = [
   { value: 'A', label: 'Apto' },
   { value: 'N', label: 'No Apto' },
   { value: 'R', label: 'No Apto Recuperable' },
-  { value: 'D', label: 'De Baja' }
+  
 ];
 // --- FIN DE LA MODIFICACIÓN ---
 

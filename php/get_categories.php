@@ -18,6 +18,7 @@ try {
         "Instrumental de Salud",
         "Elementos de señalizacion y carteleria",
         "Elementos de Cocina",
+        "mubiliario",
         
     ];
     // --- FIN DE LA MODIFICACIÓN ---

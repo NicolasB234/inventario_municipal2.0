@@ -13,7 +13,9 @@
     <div id="sidebar-overlay"></div>
 
     <div class="main-wrapper">
-        <header class="main-header">
+
+        <header class="main-header" style="position: sticky; top: 0; left: 0; right: 0; width: 100%; z-index: 1100;">
+
             <div class="header-left">
                 <button aria-label="Menu" class="header-btn" id="sidebar-toggle-btn">
                     <i class="fas fa-bars"></i>
@@ -51,7 +53,8 @@
                 </div>
             </div>
         </header>
-        <div class="container">
+
+        <div class="container" style="padding-top: 60px;"> 
             <aside class="sidebar">
                 <h2>Organigrama</h2>
                 <div class="sidebar-search-container">
@@ -63,20 +66,19 @@
                 <header class="content-header">
                     <h1 id="content-title">Bienvenido</h1>
                     <div id="view-buttons">
-                        
-                        <button id="show-gallery-view-btn" class="view-btn">🖼️ Galería</button>
-                        <button id="show-table-view-btn" class="view-btn active">📊 Tabla</button>
+                        <button id="show-gallery-view-btn" class="view-btn active">🖼️ Galería</button>
+                        <button id="show-table-view-btn" class="view-btn">📊 Tabla</button>
                         <button id="show-stats-view-btn" class="view-btn">📈 Estadísticas</button>
                     </div>
                 </header>
-                
+
                 <div id="global-controls-container"></div>
 
                 <section id="inventory-section">
-                    <div id="table-view" class="view-section active">
+                    <div id="table-view" class="view-section">
                         <p>Seleccione un área del organigrama para ver su inventario.</p>
                     </div>
-                    <div id="gallery-view" class="view-section">
+                    <div id="gallery-view" class="view-section active">
                         <h2>Vista de Galería</h2>
                         <div id="gallery-container" class="gallery-container">
                         </div>
@@ -94,6 +96,7 @@
         <img src="img/dev_logo.png" alt="Logo Desarrollador" class="dev-logo">
         <span>Aplicación de Inventario Municipal.</span>
     </footer>
+
     
     <div id="modal-agregar-item" class="modal-overlay" style="display: none;">
       <div class="modal-content">

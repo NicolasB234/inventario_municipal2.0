@@ -178,11 +178,21 @@ button:hover, .button:hover {
 }
 
 .notifications-panel {
-    position: absolute; top: 60px; /* Ajustado a la cabecera compacta */
-    left: 10px; width: 380px; max-height: 80vh; 
-    z-index: 2000; animation: fadeIn 0.3s ease; background-color: var(--color-superficie);
-    border-radius: var(--radio-borde); box-shadow: var(--sombra-suave); border: 1px solid var(--color-borde);
-    display: flex; flex-direction: column;
+    /* --- INICIO CAMBIO: Hacer el panel fijo --- */
+    position: fixed; /* Cambiado de 'absolute' a 'fixed' */
+    /* --- FIN CAMBIO --- */
+    top: 60px; /* Ajustado a la cabecera compacta */
+    left: 10px;
+    width: 380px;
+    max-height: 80vh;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+    background-color: var(--color-superficie);
+    border-radius: var(--radio-borde);
+    box-shadow: var(--sombra-suave);
+    border: 1px solid var(--color-borde);
+    display: flex;
+    flex-direction: column;
 }
 .notifications-panel h3 { margin: 0; padding: 15px 20px; font-size: 1.1em; border-bottom: 1px solid var(--color-borde); }
 .notifications-list { padding: 0 20px; overflow-y: auto; flex-grow: 1; }
