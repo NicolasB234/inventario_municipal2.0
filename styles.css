@@ -366,42 +366,91 @@ body.sidebar-open #sidebar-overlay { opacity: 1; visibility: visible; }
 }
 #theme-selector option { background-color: var(--color-superficie); color: var(--color-texto-secundario); }
 
-/* --- ESTILOS PARA LA VISTA DE GALERÍA --- */
+/* --- ESTILOS PARA LA VISTA DE GALERÍA (Rediseño Google Photos) --- */
 .gallery-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 20px;
+    /* Ya no es un grid, es un contenedor para los grupos */
     padding: 20px 0;
 }
+
+.gallery-area-group {
+    margin-bottom: 30px;
+}
+
+.gallery-area-header {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: var(--color-primario);
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--color-borde);
+}
+
+.gallery-image-grid {
+    display: flex;
+    flex-wrap: wrap; /* Esto crea las filas */
+    gap: 8px; /* Espacio entre imágenes */
+}
+
 .gallery-card {
-    background-color: var(--color-superficie); border: 1px solid var(--color-borde);
-    border-radius: var(--radio-borde); box-shadow: var(--sombra-suave);
-    overflow: hidden; transition: all 0.3s ease;
-    display: flex; flex-direction: column;
-}
-.gallery-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
-.gallery-card-img-container {
-    width: 100%;
-    padding-top: 100%; /* Aspect ratio 1:1 */
+    /* Ajuste clave: la altura es fija, el ancho es flexible */
+    height: 200px; 
+    flex-grow: 1; /* Crece para llenar el espacio */
+    border-radius: var(--radio-borde);
+    overflow: hidden;
     position: relative;
-    border-bottom: 1px solid var(--color-borde);
     cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #333; /* Fondo oscuro por si la imagen tarda en cargar */
 }
+
+.gallery-card:hover {
+    box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+    transform: scale(1.02);
+}
+
+.gallery-card-img-container {
+   /* Este contenedor ya no es necesario para el layout */
+   display: contents;
+}
+
 .gallery-card-img {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    height: 100%; 
+    object-fit: cover; /* Llena el espacio de 200px de alto, preservando aspecto y recortando */
+    border-radius: 0;
 }
-.gallery-card-placeholder { width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; background-color: var(--color-fondo); color: #ccc; font-size: 3em; }
-.gallery-card-title { padding: 10px; font-weight: 600; text-align: center; flex-grow: 1; display: flex; align-items: center; justify-content: center; font-size: 0.9em; }
-.gallery-card-code {
-    padding: 0 10px 10px;
-    font-size: 0.8em;
-    color: #7f8c8d;
-    text-align: center;
+
+/* Título sobre la imagen, como en Google Photos */
+.gallery-card-title {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    color: white;
+    padding: 20px 10px 8px 10px;
+    font-size: 0.85em;
+    font-weight: 600;
+    text-align: left;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Oculto por defecto, aparece al hacer hover (opcional) */
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+}
+
+.gallery-card:hover .gallery-card-title {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+/* Ocultamos el código, ya no es necesario en esta vista */
+.gallery-card-code { 
+    display: none; 
 }
 
 /* --- ESTILOS PARA PÁGINA DE SOLICITUDES --- */
@@ -1285,5 +1334,5 @@ body.night-mode .notifications-list .notif-approved strong {
   cursor: pointer;
 }
 .patribot-input button:hover {
-  background: #005ec7;
+  background: #005ec7;
 }

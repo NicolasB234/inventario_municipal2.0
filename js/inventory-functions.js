@@ -834,7 +834,7 @@ function renderTable(node, items, isAdmin) {
     });
 }
 
-// --- INICIO DE LA SECCIÓN ACTUALIZADA ---
+// --- INICIO DE LA SECCIÓN ACTUALIZADA (REDISIEÑO GALERÍA) ---
 // Función auxiliar para obtener la primera imagen de un ítem
 function getFirstImage(imagePath) {
     if (!imagePath) {
@@ -859,48 +859,70 @@ function renderGallery(node, items, isAdmin) {
     const galleryContainer = galleryView.querySelector('#gallery-container');
     if (!galleryContainer || !galleryView) return;
 
-    // Usamos una nueva lógica para filtrar y mapear los ítems
-    const galleryHtml = items
-        .map(item => {
-            const firstImage = getFirstImage(item.imagePath);
-            // Si el ítem tiene al menos una imagen, lo incluimos en la galería
-            if (firstImage) {
-                return `
-                    <div class="gallery-card" 
-                         data-id="${item.id}" 
-                         data-codigo="${item.codigo_item || ''}" 
-                         data-name="${item.name}" 
-                         data-description="${item.description || 'Sin descripción.'}" 
-                         data-category="${item.category || ''}"
-                         data-quantity="${item.quantity || 0}" 
-                         data-status="${statusOptions.find(s => s.value === item.status)?.label || 'N/A'}"
-                         data-date="${item.incorporacion || 'N/A'}" 
-                         data-img-src='${item.imagePath}'> 
-                        <div class="gallery-card-img-container">
-                            <img src="${firstImage}" alt="${item.name}" class="gallery-card-img" loading="lazy">
-                        </div>
-                        <div class="gallery-card-title">${item.name}</div>
-                        <div class="gallery-card-code">Código: ${item.codigo_item}</div>
-                    </div>
-                `;
+    // 1. Agrupar los ítems por área
+    const itemsByArea = new Map();
+    items.forEach(item => {
+        const firstImage = getFirstImage(item.imagePath);
+        if (firstImage) { // Solo agregar ítems que tengan al menos una imagen
+            const areaName = nodesMap.get(item.node_id) || 'Sin Área / A Clasificar';
+            if (!itemsByArea.has(areaName)) {
+                itemsByArea.set(areaName, []);
             }
-            return ''; // Si no hay imagen, no generamos tarjeta
-        })
-        .join('');
+            itemsByArea.get(areaName).push(item);
+        }
+    });
 
+    // 2. Generar el HTML para cada grupo
+    let galleryHtml = '';
+    itemsByArea.forEach((areaItems, areaName) => {
+        // Omitir el área 'A Clasificar' si estamos viendo un área específica
+        if (node.id && areaName === 'Sin Área / A Clasificar') {
+             return;
+        }
+
+        galleryHtml += `<div class="gallery-area-group">`;
+        galleryHtml += `<h2 class="gallery-area-header">${areaName}</h2>`;
+        galleryHtml += `<div class="gallery-image-grid">`;
+        
+        galleryHtml += areaItems.map(item => {
+            const firstImage = getFirstImage(item.imagePath);
+            // Mantenemos todos los data-attributes para que el modal (lightbox) siga funcionando
+            return `
+                <div class="gallery-card" 
+                     data-id="${item.id}" 
+                     data-codigo="${item.codigo_item || ''}" 
+                     data-name="${item.name}" 
+                     data-description="${item.description || 'Sin descripción.'}" 
+                     data-category="${item.category || ''}"
+                     data-quantity="${item.quantity || 0}" 
+                     data-status="${statusOptions.find(s => s.value === item.status)?.label || 'N/A'}"
+                     data-date="${item.incorporacion || 'N/A'}" 
+                     data-img-src='${item.imagePath}'> 
+                    <img src="${firstImage}" alt="${item.name}" class="gallery-card-img" loading="lazy">
+                    <div class="gallery-card-title">${item.name}</div>
+                </div>
+            `;
+        }).join('');
+
+        galleryHtml += `</div></div>`;
+    });
+
+    // 3. Lógica para la paginación y mensajes de "vacío"
     const totalPages = Math.ceil(totalGalleryItems / ITEMS_PER_PAGE);
 
-    if (totalGalleryItems === 0 && Object.keys(currentFilters).length === 0) {
-        galleryContainer.innerHTML = '<p>No hay ítems en esta área.</p>';
-    } else if (items.length === 0) {
-        galleryContainer.innerHTML = '<p>No se encontraron ítems con los filtros aplicados en esta página.</p>';
-    } else if (!galleryHtml) {
-        galleryContainer.innerHTML = '<p>No hay ítems con imágenes para mostrar en esta página.</p>';
+    if (itemsByArea.size === 0) {
+        if (totalGalleryItems === 0 && Object.keys(currentFilters).length === 0) {
+            galleryContainer.innerHTML = '<p>No hay ítems en esta área.</p>';
+        } else if (items.length === 0) {
+            galleryContainer.innerHTML = '<p>No se encontraron ítems con los filtros aplicados en esta página.</p>';
+        } else {
+            galleryContainer.innerHTML = '<p>No hay ítems con imágenes para mostrar en esta página.</p>';
+        }
     } else {
         galleryContainer.innerHTML = galleryHtml;
     }
     
-    // La lógica de paginación no cambia
+    // 4. Renderizar controles de paginación (sin cambios)
     let paginationControls = galleryView.querySelector('.pagination-controls');
     if (paginationControls) paginationControls.remove();
     if (totalPages > 1) {
@@ -920,6 +942,8 @@ function renderGallery(node, items, isAdmin) {
         };
     }
 }
+// --- FIN DE LA SECCIÓN ACTUALIZADA ---
+
 // --- NUEVO BLOQUE ---
 // Detectar visualmente los bienes con estado “Pendiente de revisión”
 function aplicarColorPendiente() {
