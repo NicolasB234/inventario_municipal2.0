@@ -26,8 +26,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 const API_URL = 'php/';
 
 async function loadPendingActions() {
-    const requestsContent = document.getElementById('requests-content');
-    requestsContent.innerHTML = '<p>Cargando solicitudes...</p>';
+    // Apuntamos al nuevo tbody de la tabla
+    const requestsContent = document.getElementById('requests-table-body');
+    if (!requestsContent) {
+        console.error('No se encontró el elemento #requests-table-body');
+        return;
+    }
+    requestsContent.innerHTML = '<tr><td colspan="8" style="text-align:center;">Cargando solicitudes...</td></tr>';
+    
     try {
         const response = await fetch(`${API_URL}get_pending_actions.php`);
         const result = await response.json();
@@ -35,41 +41,73 @@ async function loadPendingActions() {
         if (result.success && result.data.length > 0) {
             renderActions(result.data);
         } else if (result.success) {
-            requestsContent.innerHTML = '<p>No hay solicitudes pendientes de aprobación.</p>';
+            requestsContent.innerHTML = '<tr><td colspan="8" style="text-align:center;">No hay solicitudes pendientes de aprobación.</td></tr>';
         } else {
-            requestsContent.innerHTML = `<p>Error al cargar las solicitudes: ${result.message}</p>`;
+            requestsContent.innerHTML = `<tr><td colspan="8" style="text-align:center;">Error al cargar: ${result.message}</td></tr>`;
         }
     } catch (error) {
         console.error('Error de conexión:', error);
-        requestsContent.innerHTML = '<p>Error de conexión al cargar las solicitudes.</p>';
+        requestsContent.innerHTML = '<tr><td colspan="8" style="text-align:center;">Error de conexión al cargar las solicitudes.</td></tr>';
     }
 }
 
+// --- INICIO DE LA MODIFICACIÓN ---
+// Se re-escribe renderActions para que genere filas de tabla
 function renderActions(actions) {
-    const requestsContent = document.getElementById('requests-content');
+    const tableBody = document.getElementById('requests-table-body');
     let html = '';
+
     actions.forEach(action => {
         const actionDetails = formatActionDetails(action);
-        const cardClass = action.action_type === 'hacienda_add' ? 'request-card hacienda-pending' : 'request-card';
         
+        // Lógica para obtener la primera imagen (si imagePath es un JSON)
+        let firstImage = 'img/icono_municipal.png'; // Imagen por defecto
+        if (action.imagePath) {
+            try {
+                // Si imagePath es un string JSON (ej: ["img1.jpg", "img2.jpg"])
+                const images = JSON.parse(action.imagePath);
+                if (Array.isArray(images) && images.length > 0) {
+                    firstImage = images[0];
+                }
+            } catch (e) {
+                // Si no es JSON, es una ruta simple (ej: "img1.jpg")
+                firstImage = action.imagePath; 
+            }
+        }
+        
+        // Para solicitudes 'hacienda_add', el ítem aún no existe, así que tomamos el nombre de action_data
+        let itemNombre = action.name; // Nombre de la tabla inventory_items
+        let itemCodigo = action.codigo_item; // Código de la tabla inventory_items
+
+        if (action.action_type === 'hacienda_add') {
+            try {
+                const data = JSON.parse(action.action_data);
+                itemNombre = data.name || 'Alta de Hacienda';
+                itemCodigo = 'N/A (Nuevo)';
+                if (data.itemImages && data.itemImages.length > 0) {
+                    firstImage = data.itemImages[0];
+                }
+            } catch (e) { /* Mantener valores por defecto */ }
+        }
+
         html += `
-            <div class="${cardClass}">
-                <div class="request-header">
-                    <span class="action-type ${action.action_type}">${actionDetails.title}</span>
-                    <span class="request-user">Usuario: <strong>${action.username}</strong></span>
-                    <span class="request-date">${new Date(action.created_at).toLocaleString('es-AR')}</span>
-                </div>
-                <div class="request-body">
-                    ${actionDetails.body}
-                </div>
-                <div class="request-footer">
-                    <button class="button review-btn" data-action-id="${action.id}">Revisar</button>
-                </div>
-            </div>
+            <tr>
+                <td>${itemCodigo || 'N/A'}</td>
+                <td><img src="${firstImage}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" alt="img"></td>
+                <td>${itemNombre || 'N/A'}</td>
+                <td><span class="action-type ${action.action_type}">${actionDetails.title}</span></td>
+                <td>${action.username}</td>
+                <td>${new Date(action.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                <td>${actionDetails.body}</td> <td>
+                    <button class="button review-btn" data-action-id="${action.id}" style="padding: 8px 12px;">Revisar</button>
+                </td>
+            </tr>
         `;
     });
-    requestsContent.innerHTML = html;
     
+    tableBody.innerHTML = html;
+    
+    // Volver a asignar los listeners a los nuevos botones
     document.querySelectorAll('.review-btn').forEach(button => {
         button.addEventListener('click', () => {
             const action = actions.find(a => a.id == button.dataset.actionId);
@@ -77,6 +115,8 @@ function renderActions(actions) {
         });
     });
 }
+// --- FIN DE LA MODIFICACIÓN ---
+
 
 function formatActionDetails(action) {
     if (!action.action_data) return { title: 'Error', body: '<p>Datos corruptos.</p>' };
@@ -85,13 +125,10 @@ function formatActionDetails(action) {
 
     switch (action.action_type) {
         case 'hacienda_add': {
-            let detailsHtml = '<h4>Detalles del Nuevo Bien:</h4><ul>';
+            let detailsHtml = '<ul>';
             const fieldLabels = {
-                name: 'Nombre', quantity: 'Cantidad', category: 'Categoría', description: 'Descripción',
-                incorporacion: 'Fecha Incorporación', status: 'Estado Inicial', encargado: 'Encargado',
-                valor: 'Valor', garantia: 'Garantía', tipo_compra: 'Tipo de Compra', proveedor: 'Proveedor',
-                cuit: 'CUIT', expediente: 'Expediente', numero_expediente: 'N° Expediente',
-                codigo_comprobante: 'Cód. Comprobante', tipo_comprobante: 'Tipo Comprobante', numero_comprobante: 'N° Comprobante'
+                name: 'Nombre', quantity: 'Cantidad', category: 'Categoría',
+                valor: 'Valor', proveedor: 'Proveedor'
             };
             for (const key in data) {
                 if (fieldLabels[key] && data[key]) {
@@ -99,22 +136,17 @@ function formatActionDetails(action) {
                 }
             }
             detailsHtml += '</ul>';
+            // Para el modal, mostramos todo. Para la tabla, un resumen.
+            const fullDetails = '<h4>Detalles del Nuevo Bien:</h4>' + detailsHtml.replace('<ul>', '').replace('</ul>', '').split('<li>').join('<p>').split('</li>').join('</p>');
+            
+            // Lógica completa para el modal
+            const modalBody = formatHaciendaAddModalBody(data);
 
-            if (data.itemImages && data.itemImages.length > 0) {
-                detailsHtml += '<h4>Imágenes Adjuntas:</h4><div style="display:flex; flex-wrap:wrap; gap:10px;">';
-                data.itemImages.forEach(imgPath => {
-                    detailsHtml += `<a href="${imgPath}" target="_blank"><img src="${imgPath}" style="max-height:80px; border-radius: 5px; border: 1px solid #ddd;"></a>`;
-                });
-                detailsHtml += '</div>';
-            }
-            return { title: 'Alta de Bien (Hacienda)', body: detailsHtml };
+            return { title: 'Alta (Hacienda)', body: detailsHtml, modalBody: modalBody };
         }
 
         case 'edit': {
-            let changesHtml = `<p>Solicitud para editar el ítem <strong>${data.old_data.name}</strong>:</p>
-                               <table class="log-table" style="margin-top: 10px;">
-                                   <thead><tr><th>Campo</th><th>Valor Anterior</th><th>Valor Nuevo</th></tr></thead>
-                                   <tbody>`;
+            let changesHtml = `<p>Cambios propuestos:</p><ul>`;
             let hasChanges = false;
             const fields = ['name', 'quantity', 'category', 'description', 'incorporacion', 'status', 'encargado'];
             const fieldLabels = { name: 'Nombre', quantity: 'Cantidad', category: 'Categoría', description: 'Descripción', incorporacion: 'Incorporación', status: 'Estado', encargado: 'Encargado' };
@@ -124,26 +156,48 @@ function formatActionDetails(action) {
                 const newValue = data.new_data[key] || '';
                 if (oldValue.toString() !== newValue.toString()) {
                     hasChanges = true;
-                    changesHtml += `<tr>
-                                        <td><strong>${fieldLabels[key]}</strong></td>
-                                        <td>${oldValue}</td>
-                                        <td><strong>${newValue}</strong></td>
-                                    </tr>`;
+                    changesHtml += `<li><strong>${fieldLabels[key]}:</strong> ${oldValue} ➔ <strong>${newValue}</strong></li>`;
                 }
             });
-            changesHtml += '</tbody></table>';
+            changesHtml += '</ul>';
             
             if (!hasChanges) {
-                changesHtml = "<p>No se propusieron cambios en los campos editables.</p>";
+                changesHtml = "<p>Sin cambios detectados.</p>";
             }
+            
+            // Cuerpo completo para el modal (tabla de comparación)
+            const modalBody = `<p>Solicitud para editar el ítem <strong>${data.old_data.name}</strong>:</p>
+                               <table class="log-table" style="margin-top: 10px; width:100%;">
+                                   <thead><tr><th>Campo</th><th>Valor Anterior</th><th>Valor Nuevo</th></tr></thead>
+                                   <tbody>
+                                    ${fields.map(key => {
+                                        const oldValue = data.old_data[key] || '';
+                                        const newValue = data.new_data[key] || '';
+                                        if (oldValue.toString() !== newValue.toString()) {
+                                            return `<tr>
+                                                        <td><strong>${fieldLabels[key]}</strong></td>
+                                                        <td>${oldValue}</td>
+                                                        <td><strong>${newValue}</strong></td>
+                                                    </tr>`;
+                                        }
+                                        return '';
+                                    }).join('')}
+                                   </tbody>
+                               </table>`;
 
-            return { title: 'Edición de Ítem', body: changesHtml };
+            return { title: 'Edición de Ítem', body: changesHtml, modalBody: modalBody };
         }
             
         case 'transfer': {
              const originName = nodesMap.get(data.origin_node_id) || 'Área Desconocida';
              const destinationName = nodesMap.get(data.destination_node_id) || 'Área Desconocida';
-             let transferHtml = `<p>Solicitud para traspasar el ítem <strong>${data.item_name}</strong>:</p>
+             let transferHtml = `<ul>
+                                     <li><strong>Hacia:</strong> ${destinationName}</li>
+                                     <li><strong>Motivo:</strong> ${data.reason || 'N/D'}</li>
+                                 </ul>`;
+             
+             // Cuerpo completo para el modal
+             const modalBody = `<p>Solicitud para traspasar el ítem <strong>${data.item_name}</strong>:</p>
                                  <ul>
                                      <li><strong>Desde:</strong> ${originName}</li>
                                      <li><strong>Hacia:</strong> ${destinationName}</li>
@@ -151,31 +205,74 @@ function formatActionDetails(action) {
                                      <li><strong>Motivo:</strong> ${data.reason || 'No especificado'}</li>
                                  </ul>`;
 
-             return { title: 'Traspaso de Ítem', body: transferHtml };
+             return { title: 'Traspaso de Ítem', body: transferHtml, modalBody: modalBody };
         }
 
         case 'decommission':
-            return { title: 'Solicitud de Baja', body: `<p>Solicitud para dar de baja el ítem: <strong>${data.item_name || `ID ${data.item_id}`}</strong>.</p>` };
+            const modalBody = `<p>Solicitud para dar de baja el ítem: <strong>${data.item_name || `ID ${data.item_id}`}</strong>.</p><p>Esta acción marcará el ítem como 'De Baja' (D) y lo ocultará de las vistas principales.</p>`;
+            return { title: 'Solicitud de Baja', body: `<p>Dar de baja: <strong>${data.item_name}</strong></p>`, modalBody: modalBody };
 
         default:
-            return { title: 'Desconocido', body: '<p>Detalles no disponibles.</p>' };
+            return { title: 'Desconocido', body: '<p>Detalles no disponibles.</p>', modalBody: '<p>Detalles no disponibles.</p>' };
     }
 }
 
+// Nueva función auxiliar para el modal de Hacienda
+function formatHaciendaAddModalBody(data) {
+    let detailsHtml = '<h4>Detalles del Nuevo Bien:</h4><ul style="list-style-type: none; padding-left: 0;">';
+    const fieldLabels = {
+        name: 'Nombre', quantity: 'Cantidad', category: 'Categoría', description: 'Descripción',
+        incorporacion: 'Fecha Incorporación', status: 'Estado Inicial', encargado: 'Encargado',
+        valor: 'Valor', garantia: 'Garantía', tipo_compra: 'Tipo de Compra', proveedor: 'Proveedor',
+        cuit: 'CUIT', expediente: 'Expediente', numero_expediente: 'N° Expediente',
+        codigo_comprobante: 'Cód. Comprobante', tipo_comprobante: 'Tipo Comprobante', numero_comprobante: 'N° Comprobante'
+    };
+    for (const key in data) {
+        if (fieldLabels[key] && data[key]) {
+            detailsHtml += `<li style="padding: 4px 0;"><strong>${fieldLabels[key]}:</strong> ${data[key]}</li>`;
+        }
+    }
+    detailsHtml += '</ul>';
+
+    if (data.itemImages && data.itemImages.length > 0) {
+        detailsHtml += '<h4 style="margin-top: 15px;">Imágenes Adjuntas:</h4><div style="display:flex; flex-wrap:wrap; gap:10px;">';
+        data.itemImages.forEach(imgPath => {
+            detailsHtml += `<a href="${imgPath}" target="_blank"><img src="${imgPath}" style="height:80px; width: 80px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd;"></a>`;
+        });
+        detailsHtml += '</div>';
+    }
+    return detailsHtml;
+}
+
+
 function showReviewModal(action) {
     const modal = document.getElementById('review-modal');
+    // Usamos .modalBody si existe, si no, usamos .body
     const actionDetails = formatActionDetails(action);
+    const modalBodyContent = actionDetails.modalBody || actionDetails.body;
+
 
     document.getElementById('review-action-id').value = action.id;
     document.getElementById('review-username').textContent = action.username;
     document.getElementById('review-action-type').textContent = actionDetails.title;
-    document.getElementById('review-details').innerHTML = actionDetails.body;
+    document.getElementById('review-details').innerHTML = modalBodyContent; // Aquí usamos el contenido del modal
     document.getElementById('review-comment').value = '';
     
     const approveBtn = modal.querySelector('.approve-btn');
     const rejectBtn = modal.querySelector('.reject-btn');
 
+    // Clonamos los botones para limpiar listeners antiguos
+    const approveBtnClone = approveBtn.cloneNode(true);
+    const rejectBtnClone = rejectBtn.cloneNode(true);
+    approveBtn.parentNode.replaceChild(approveBtnClone, approveBtn);
+    rejectBtn.parentNode.replaceChild(rejectBtnClone, rejectBtn);
+
+
     const handleReview = async (status) => {
+        // Deshabilitar botones para evitar doble click
+        approveBtnClone.disabled = true;
+        rejectBtnClone.disabled = true;
+
         const formData = new FormData();
         formData.append('action_id', document.getElementById('review-action-id').value);
         formData.append('comment', document.getElementById('review-comment').value);
@@ -194,7 +291,7 @@ function showReviewModal(action) {
                     sessionStorage.setItem('highlightItemId', result.newItemId);
                 }
                 modal.style.display = 'none';
-                loadPendingActions();
+                loadPendingActions(); // Recargar la lista
             } else {
                 alert(`Error al revisar: ${result.message}`);
             }
@@ -202,16 +299,18 @@ function showReviewModal(action) {
         } catch (error) {
             console.error('Error de conexión:', error);
             alert('Error de conexión al procesar la solicitud.');
+        } finally {
+            // Habilitar botones de nuevo en caso de error
+            approveBtnClone.disabled = false;
+            rejectBtnClone.disabled = false;
         }
     };
 
-    approveBtn.onclick = () => handleReview('approved');
-    rejectBtn.onclick = () => handleReview('rejected');
+    approveBtnClone.addEventListener('click', () => handleReview('approved'));
+    rejectBtnClone.addEventListener('click', () => handleReview('rejected'));
     
     modal.querySelector('.close-modal').onclick = () => {
         modal.style.display = 'none';
-        approveBtn.onclick = null;
-        rejectBtn.onclick = null;
     };
     
     modal.style.display = 'flex';

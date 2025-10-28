@@ -30,10 +30,29 @@
     <div class="requests-container">
         <a href="index.html" class="button back-link"><i class="fas fa-arrow-left"></i> Volver al Inventario</a>
         <h1>Solicitudes Pendientes de Aprobación</h1>
-        <div id="requests-content">
-            <p>Cargando solicitudes...</p>
+        
+        <div class="table-responsive">
+            <table class="inventory-table" id="solicitudes-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>ID Ítem</th>
+                        <th>Imagen</th>
+                        <th>Nombre Ítem</th>
+                        <th>Tipo de Solicitud</th>
+                        <th>Usuario</th>
+                        <th>Fecha</th>
+                        <th>Detalles de la Solicitud</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="requests-table-body">
+                    <tr>
+                        <td colspan="8" style="text-align:center;">Cargando solicitudes...</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-    </div>
+        </div>
 
     <div id="review-modal" class="modal-overlay" style="display:none;">
         <div class="modal-content">

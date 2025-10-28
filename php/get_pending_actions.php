@@ -13,8 +13,24 @@ if (!$is_admin) {
 }
 
 try {
-    $result = $conn->query("SELECT id, user_id, username, action_type, item_id, action_data, created_at FROM pending_actions WHERE status = 'pending' ORDER BY created_at DESC");
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Se usa un LEFT JOIN para traer los datos del ítem (nombre, imagen, código)
+    // p = pending_actions, i = inventory_items
+    $sql = "SELECT
+                p.id, p.user_id, p.username, p.action_type, p.item_id, p.action_data, p.created_at,
+                i.codigo_item, i.name, i.imagePath
+            FROM
+                pending_actions p
+            LEFT JOIN
+                inventory_items i ON p.item_id = i.id
+            WHERE
+                p.status = 'pending'
+            ORDER BY
+                p.created_at DESC";
     
+    $result = $conn->query($sql);
+    // --- FIN DE LA MODIFICACIÓN ---
+
     $actions = [];
     while ($row = $result->fetch_assoc()) {
         $actions[] = $row;
