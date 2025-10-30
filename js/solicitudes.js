@@ -32,7 +32,8 @@ async function loadPendingActions() {
         console.error('No se encontró el elemento #requests-table-body');
         return;
     }
-    requestsContent.innerHTML = '<tr><td colspan="8" style="text-align:center;">Cargando solicitudes...</td></tr>';
+    // --- MODIFICACIÓN: Colspan cambiado a 9 ---
+    requestsContent.innerHTML = '<tr><td colspan="9" style="text-align:center;">Cargando solicitudes...</td></tr>';
     
     try {
         const response = await fetch(`${API_URL}get_pending_actions.php`);
@@ -41,13 +42,16 @@ async function loadPendingActions() {
         if (result.success && result.data.length > 0) {
             renderActions(result.data);
         } else if (result.success) {
-            requestsContent.innerHTML = '<tr><td colspan="8" style="text-align:center;">No hay solicitudes pendientes de aprobación.</td></tr>';
+            // --- MODIFICACIÓN: Colspan cambiado a 9 ---
+            requestsContent.innerHTML = '<tr><td colspan="9" style="text-align:center;">No hay solicitudes pendientes de aprobación.</td></tr>';
         } else {
-            requestsContent.innerHTML = `<tr><td colspan="8" style="text-align:center;">Error al cargar: ${result.message}</td></tr>`;
+            // --- MODIFICACIÓN: Colspan cambiado a 9 ---
+            requestsContent.innerHTML = `<tr><td colspan="9" style="text-align:center;">Error al cargar: ${result.message}</td></tr>`;
         }
     } catch (error) {
         console.error('Error de conexión:', error);
-        requestsContent.innerHTML = '<tr><td colspan="8" style="text-align:center;">Error de conexión al cargar las solicitudes.</td></tr>';
+        // --- MODIFICACIÓN: Colspan cambiado a 9 ---
+        requestsContent.innerHTML = '<tr><td colspan="9" style="text-align:center;">Error de conexión al cargar las solicitudes.</td></tr>';
     }
 }
 
@@ -79,11 +83,15 @@ function renderActions(actions) {
         let itemNombre = action.name; // Nombre de la tabla inventory_items
         let itemCodigo = action.codigo_item; // Código de la tabla inventory_items
 
+        // --- NUEVA LÓGICA para Descripción ---
+        let itemDescription = action.description || ''; // Descripción desde i.description (para edit, transfer, decommission)
+        
         if (action.action_type === 'hacienda_add') {
             try {
                 const data = JSON.parse(action.action_data);
                 itemNombre = data.name || 'Alta de Hacienda';
                 itemCodigo = 'N/A (Nuevo)';
+                itemDescription = data.description || ''; // Descripción desde action_data
                 if (data.itemImages && data.itemImages.length > 0) {
                     firstImage = data.itemImages[0];
                 }
@@ -93,12 +101,29 @@ function renderActions(actions) {
         html += `
             <tr>
                 <td>${itemCodigo || 'N/A'}</td>
-                <td><img src="${firstImage}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" alt="img"></td>
+                
+                <td><img src="${firstImage}" 
+                         class="solicitud-imagen-clickable"
+                         data-full-src="${firstImage}"
+                         data-item-name="${itemNombre || 'N/A'}"
+                         data-item-desc="${itemDescription || 'Sin descripción.'}"
+                         data-item-user="${action.username}"
+                         data-request-type="${actionDetails.title}"
+                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer;" 
+                         alt="img">
+                </td>
+                
                 <td>${itemNombre || 'N/A'}</td>
+                
+                <td style="white-space: normal; max-width: 200px; overflow: hidden; text-overflow: ellipsis;" title="${itemDescription || ''}">
+                    ${itemDescription || ''}
+                </td>
+
                 <td><span class="action-type ${action.action_type}">${actionDetails.title}</span></td>
                 <td>${action.username}</td>
                 <td>${new Date(action.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</td>
-                <td>${actionDetails.body}</td> <td>
+                <td>${actionDetails.body}</td> 
+                <td>
                     <button class="button review-btn" data-action-id="${action.id}" style="padding: 8px 12px;">Revisar</button>
                 </td>
             </tr>
@@ -106,6 +131,9 @@ function renderActions(actions) {
     });
     
     tableBody.innerHTML = html;
+    
+    // --- NUEVO: Llamar a la función para configurar el modal ---
+    setupImageModalListeners();
     
     // Volver a asignar los listeners a los nuevos botones
     document.querySelectorAll('.review-btn').forEach(button => {
@@ -314,4 +342,44 @@ function showReviewModal(action) {
     };
     
     modal.style.display = 'flex';
+}
+
+// --- NUEVA FUNCIÓN PARA CONTROLAR EL MODAL DE IMAGEN ---
+function setupImageModalListeners() {
+    const modal = document.getElementById('image-modal');
+    if (!modal) return;
+
+    // Elementos dentro del modal que actualizaremos
+    const modalImage = document.getElementById('modal-image');
+    const modalItemName = document.getElementById('modal-item-name');
+    const modalItemDesc = document.getElementById('modal-item-description');
+    const modalItemUser = document.getElementById('modal-item-user');
+    const modalItemRequestType = document.getElementById('modal-item-request-type');
+    const closeModalBtn = modal.querySelector('.close-modal-gallery');
+
+    const closeModal = () => modal.style.display = "none";
+
+    // Asignar evento a todas las imágenes clickables
+    document.querySelectorAll('.solicitud-imagen-clickable').forEach(img => {
+        img.addEventListener('click', () => {
+            const data = img.dataset; // Obtener todos los atributos data-*
+            
+            // Llenar el modal con la información
+            modalImage.src = data.fullSrc;
+            modalItemName.textContent = data.itemName;
+            modalItemDesc.textContent = data.itemDesc;
+            modalItemUser.textContent = data.itemUser;
+            modalItemRequestType.textContent = data.requestType;
+            
+            // Mostrar el modal
+            modal.style.display = "flex";
+        });
+    });
+
+    // Eventos para cerrar el modal
+    closeModalBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        // Cerrar si se hace clic en el fondo oscuro
+        if (e.target === modal) closeModal();
+    });
 }

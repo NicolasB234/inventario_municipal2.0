@@ -38,7 +38,7 @@
                         <th>ID Ítem</th>
                         <th>Imagen</th>
                         <th>Nombre Ítem</th>
-                        <th>Tipo de Solicitud</th>
+                        <th>Descripción</th> <th>Tipo de Solicitud</th>
                         <th>Usuario</th>
                         <th>Fecha</th>
                         <th>Detalles de la Solicitud</th>
@@ -47,7 +47,7 @@
                 </thead>
                 <tbody id="requests-table-body">
                     <tr>
-                        <td colspan="8" style="text-align:center;">Cargando solicitudes...</td>
+                        <td colspan="9" style="text-align:center;">Cargando solicitudes...</td>
                     </tr>
                 </tbody>
             </table>
@@ -75,6 +75,22 @@
         </div>
     </div>
     
+    <div id="image-modal" class="modal-overlay" style="display: none;">
+        <span class="close-modal-gallery">&times;</span>
+        <span class="prev-gallery-btn" style="display: none;">&#10094;</span>
+        <span class="next-gallery-btn" style="display: none;">&#10095;</span>
+        <div class="image-modal-container">
+            <img class="image-modal-content" id="modal-image" src="" alt="Imagen del ítem">
+            <div class="image-modal-details">
+                <h3 id="modal-item-name"></h3>
+                <p><strong>Descripción:</strong> <span id="modal-item-description"></span></p>
+                <hr>
+                <p><strong>Solicitado por:</strong> <span id="modal-item-user"></span></p>
+                <p><strong>Tipo de Solicitud:</strong> <span id="modal-item-request-type"></span></p>
+            </div>
+        </div>
+    </div>
+
     <footer class="page-footer">
         <img src="img/dev_logo.png" alt="Logo" class="dev-logo">
         <span>Aplicación de Inventario Municipal. <a href="" target="_blank">Visita nuestro sitio</a>.</span>

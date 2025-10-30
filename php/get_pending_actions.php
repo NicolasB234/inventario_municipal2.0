@@ -14,11 +14,10 @@ if (!$is_admin) {
 
 try {
     // --- INICIO DE LA MODIFICACIÓN ---
-    // Se usa un LEFT JOIN para traer los datos del ítem (nombre, imagen, código)
-    // p = pending_actions, i = inventory_items
+    // Se añade i.description a la consulta SELECT
     $sql = "SELECT
                 p.id, p.user_id, p.username, p.action_type, p.item_id, p.action_data, p.created_at,
-                i.codigo_item, i.name, i.imagePath
+                i.codigo_item, i.name, i.imagePath, i.description
             FROM
                 pending_actions p
             LEFT JOIN
