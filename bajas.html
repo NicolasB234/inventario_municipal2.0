@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Consulta de Bajas - Inventario</title>
+    <link rel="icon" type="image/png" href="img/logo_municipal.png">
+    <link href="styles.css" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+</head>
+<body>
+    <div class="main-wrapper">
+        <header class="main-header" style="position: sticky; top: 0; left: 0; right: 0; width: 100%; z-index: 1100;">
+            <div class="header-left">
+                <a href="index.html" class="button" style="text-decoration: none;"><i class="fas fa-arrow-left"></i> Volver</a>
+            </div>
+            <div class="header-center">
+                <img src="img/logo_municipal.png" alt="Logo Municipalidad" class="logo-img">
+            </div>
+            <div class="header-right" id="header-right-container"></div>
+        </header>
+
+        <main class="container" style="padding-top: 20px;">
+            <header class="content-header">
+                <h1 id="content-title">Historial de Bajas Patrimoniales</h1>
+            </header>
+            
+            <section id="bajas-section" style="padding: 20px;">
+                <div class="table-responsive">
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha de Baja</th>
+                                <th>Ítem (Nombre / Código)</th>
+                                <th>Área</th>
+                                <th>Motivo</th>
+                                <th>Solicitante</th>
+                                <th>Estado</th>
+                                <th>Evidencia</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bajas-table-body">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="js/bajas.js" type="module"></script>
+    <script src="js/theme-switcher.js" defer></script>
+</body>
+</html>

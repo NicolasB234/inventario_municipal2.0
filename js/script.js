@@ -518,6 +518,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 requestsButton.className = "header-btn";
                 requestsButton.onclick = () => { window.location.href = 'solicitudes.html'; };
                 container.prepend(requestsButton);
+
+                // --- INICIO DE CÓDIGO NUEVO ---
+                const bajasButton = document.createElement('button');
+                bajasButton.id = 'bajas-btn';
+                bajasButton.innerHTML = '<i class="fas fa-archive"></i>';
+                bajasButton.title = "Historial de Bajas";
+                bajasButton.className = "header-btn";
+                bajasButton.onclick = () => { window.location.href = 'bajas.html'; };
+                container.prepend(bajasButton);
+                // --- FIN DE CÓDIGO NUEVO ---
             }
         }
         

@@ -108,10 +108,23 @@ try {
                 $action_text = 'dar de baja';
                 $item_name_for_log = $action_data['item_name'] ?? 'un ítem';
                 $status_baja = 'D';
+                
+                // 1. Actualiza el ítem principal
                 $stmt_decommission = $conn->prepare("UPDATE inventory_items SET status = ? WHERE id = ?");
                 $stmt_decommission->bind_param("si", $status_baja, $action_data['item_id']);
                 if (!$stmt_decommission->execute()) throw new Exception('Error al dar de baja el ítem.');
                 $stmt_decommission->close();
+
+                // --- INICIO DE MODIFICACIÓN ---
+                // 2. Actualiza la tabla de bajas
+                $decommission_id = $action_data['decommission_id'] ?? null;
+                if ($decommission_id) {
+                    $stmt_decomm_approve = $conn->prepare("UPDATE decommissioned_items SET status = 'approved' WHERE id = ?");
+                    $stmt_decomm_approve->bind_param("i", $decommission_id);
+                    $stmt_decomm_approve->execute();
+                    $stmt_decomm_approve->close();
+                }
+                // --- FIN DE MODIFICACIÓN ---
                 break;
 
             default:
@@ -129,6 +142,19 @@ try {
             'edit' => 'editar', 'transfer' => 'traspasar', 'decommission' => 'dar de baja', 'import' => 'importar', 'hacienda_add' => 'agregar el bien',
             default => 'realizar una acción'
         };
+
+        // --- INICIO DE MODIFICACIÓN ---
+        // Si la acción rechazada es 'decommission', actualizar también la tabla de bajas
+        if ($action['action_type'] === 'decommission') {
+            $decommission_id = $action_data['decommission_id'] ?? null;
+            if ($decommission_id) {
+                $stmt_decomm_reject = $conn->prepare("UPDATE decommissioned_items SET status = 'rejected' WHERE id = ?");
+                $stmt_decomm_reject->bind_param("i", $decommission_id);
+                $stmt_decomm_reject->execute();
+                $stmt_decomm_reject->close();
+            }
+        }
+        // --- FIN DE MODIFICACIÓN ---
         
         $log_details = "Su solicitud para {$action_text} ('{$item_name_for_log}') ha sido RECHAZADA.";
         if (!empty($review_comment)) $log_details .= " Comentario: '" . $review_comment . "'";

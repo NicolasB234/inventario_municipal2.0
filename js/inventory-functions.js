@@ -74,7 +74,7 @@ export const statusOptions = [
   { value: 'A', label: 'Apto' },
   { value: 'N', label: 'No Apto' },
   { value: 'R', label: 'No Apto Recuperable' },
-  
+  { value: 'D', label: 'De Baja' }, // <-- LÍNEA AÑADIDA
 ];
 // --- FIN DE LA MODIFICACIÓN ---
 
@@ -305,6 +305,156 @@ export function setupModalClosers() {
         modal.addEventListener('click', (e) => { if (e.target === modal) closeItemForm(); });
     }
 }
+
+// --- INICIO DE CÓDIGO NUEVO ---
+// Funciones para el nuevo modal de baja
+
+let currentDecommissionSubmitHandler = null;
+const decommissionModal = document.getElementById('modal-decommission-item');
+const decommissionForm = document.getElementById('form-decommission-item');
+
+function closeDecommissionForm() {
+    if (decommissionModal) decommissionModal.style.display = 'none';
+    if (decommissionForm) decommissionForm.reset();
+    const preview = document.getElementById('decommissionImagePreview');
+    if (preview) preview.style.display = 'none';
+}
+
+function showDecommissionForm(item) {
+    if (!decommissionModal || !decommissionForm) return;
+
+    // Poblar el formulario
+    decommissionForm.querySelector('[name="id"]').value = item.id;
+    document.getElementById('decommission-item-name').textContent = `${item.name} (Código: ${item.codigo_item || 'N/A'})`;
+    
+    const preview = document.getElementById('decommissionImagePreview');
+    const imageInput = document.getElementById('form-decommission-image');
+
+    imageInput.onchange = () => {
+        if (imageInput.files && imageInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(imageInput.files[0]);
+        }
+    };
+
+    // Remover listener anterior si existe
+    if (currentDecommissionSubmitHandler) {
+        decommissionForm.removeEventListener('submit', currentDecommissionSubmitHandler);
+    }
+
+    // Crear nuevo listener
+    currentDecommissionSubmitHandler = async (event) => {
+        event.preventDefault();
+        const formData = new FormData(decommissionForm);
+        const { node, isAdmin } = window.currentInventoryContext || {};
+
+        if (!confirm('¿Está seguro de que desea confirmar esta baja? Esta acción es definitiva.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(API_URL + 'delete_item.php', { method: 'POST', body: formData });
+            const result = await response.json();
+            
+            alert(result.message || 'Operación completada.');
+            
+            if (result.success) {
+                closeDecommissionForm();
+                // Imprimir el acta si los datos vienen en la respuesta
+                if (result.acta_data) {
+                    if (confirm("¿Desea imprimir el Acta de Baja ahora?")) {
+                        printDecommissionActa(result.acta_data);
+                    }
+                }
+                // Recargar el inventario
+                if (node) {
+                    displayInventory(node, isAdmin, currentTablePage, currentFilters, currentSortBy);
+                }
+            }
+        } catch (error) {
+            console.error('Error al procesar la baja:', error);
+            alert('Error de conexión al procesar la solicitud.');
+        }
+    };
+    
+    decommissionForm.addEventListener('submit', currentDecommissionSubmitHandler);
+    
+    // Configurar botones de cerrar
+    decommissionModal.querySelector('.close-modal').onclick = closeDecommissionForm;
+    document.getElementById('cancel-decommission-btn').onclick = closeDecommissionForm;
+    decommissionModal.onclick = (e) => { if (e.target === decommissionModal) closeDecommissionForm(); };
+
+    decommissionModal.style.display = 'flex';
+}
+
+function printDecommissionActa(data) {
+    const reportWindow = window.open('', '_blank');
+    reportWindow.document.write('<html><head><title>Acta de Baja Patrimonial</title>');
+    reportWindow.document.write(`
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 40px; font-size: 11pt; }
+            .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
+            .header h1 { margin: 0; font-size: 16pt; }
+            .header h2 { font-size: 14pt; margin: 5px 0; }
+            .content { margin-top: 30px; }
+            .content p { line-height: 1.6; }
+            .item-details { border: 1px solid #ccc; padding: 15px; background: #f9f9f9; }
+            .signatures { margin-top: 80px; width: 100%; display: table; }
+            .signature-box { display: table-cell; width: 50%; text-align: center; }
+            .status-pending { color: red; font-weight: bold; text-align: center; font-size: 1.2em; }
+        </style>
+    `);
+    reportWindow.document.write('</head><body>');
+
+    const statusHtml = data.status === 'pending' 
+        ? '<h3 class="status-pending">SOLICITUD PENDIENTE DE APROBACIÓN</h3>' 
+        : '';
+    const date = new Date(data.date).toLocaleString('es-AR');
+
+    reportWindow.document.write(`
+        <div class="header">
+            <h1>MUNICIPALIDAD DE CURUZÚ CUATIÁ</h1>
+            <p>Dirección de Control Patrimonial</p>
+            <h2>ACTA DE BAJA PATRIMONIAL</h2>
+            ${statusHtml}
+        </div>
+        <div class="content">
+            <p>En Curuzú Cuatiá, a la fecha ${date}, el Sr./Sra. <strong>${data.username}</strong> (Usuario ID: ${data.user_id}), en carácter de responsable del área, solicita y/o certifica la baja del bien patrimonial que se detalla a continuación:</p>
+            
+            <div class="item-details">
+                <p><strong>Ítem:</strong> ${data.item_name}</p>
+                <p><strong>Código Patrimonial:</strong> ${data.item_code || 'N/A'}</p>
+                <p><strong>Área:</strong> ${data.area_name}</p>
+                <p><strong>Motivo de la Baja:</strong> ${data.reason}</p>
+            </div>
+            
+            <p style="margin-top: 20px;">Se deja constancia de que el ítem es dado de baja del inventario municipal por el motivo expuesto. Se adjunta (o se registra digitalmente) evidencia fotográfica del estado del bien al momento de la baja.</p>
+            
+            <div class="signatures">
+                <div class="signature-box">
+                    <p>_________________________</p>
+                    <p>Firma del Responsable del Área</p>
+                    <p>(Solicitante: ${data.username})</p>
+                </div>
+                <div class="signature-box">
+                    <p>_________________________</p>
+                    <p>Firma del Director de Control Patrimonial</p>
+                    <p>(Autorizante)</p>
+                </div>
+            </div>
+        </div>
+    `);
+
+    reportWindow.document.write('</body></html>');
+    reportWindow.document.close();
+    reportWindow.print();
+}
+// --- FIN DE CÓDIGO NUEVO ---
+
 
 function showTransferForm(node, items) {
     if (items.length === 0) {
@@ -812,26 +962,18 @@ function renderTable(node, items, isAdmin) {
         };
     });
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Reemplaza el antiguo listener '.delete-btn'
     tableContainer.querySelectorAll('.delete-btn').forEach(button => {
         button.onclick = async () => {
             const itemToDelete = items.find(i => i.id == button.dataset.itemId);
-            if (itemToDelete && confirm(`¿Estás seguro de que deseas solicitar la BAJA del ítem "${itemToDelete.name}"?`)) {
-                try {
-                    const formData = new FormData();
-                    formData.append('id', itemToDelete.id);
-                    const response = await fetch(API_URL + 'delete_item.php', { method: 'POST', body: formData });
-                    const result = await response.json();
-                    alert(result.message || 'Operación completada.');
-                    if (result.success) {
-                        displayInventory(node, isAdmin, currentTablePage, currentFilters, currentSortBy);
-                    }
-                } catch (error) {
-                    console.error('Error al dar de baja:', error);
-                    alert('Error de conexión al procesar la solicitud.');
-                }
+            if (itemToDelete) {
+                // Llama al nuevo formulario de baja
+                showDecommissionForm(itemToDelete);
             }
         };
     });
+    // --- FIN DE LA MODIFICACIÓN ---
 }
 
 // --- INICIO DE LA SECCIÓN ACTUALIZADA (REDISIEÑO GALERÍA) ---

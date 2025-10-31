@@ -158,8 +158,43 @@
         </div>
     </div>
 
-    
-    
+    <div id="modal-decommission-item" class="modal-overlay" style="display: none;">
+      <div class="modal-content" style="max-width: 500px;">
+        <button class="close-modal">✖</button>
+        <h2>Solicitar Baja de Ítem</h2>
+        <form id="form-decommission-item" enctype="multipart/form-data">
+          <input type="hidden" name="id">
+          
+          <div class="form-row">
+            <label>Ítem a dar de baja:</label>
+            <strong id="decommission-item-name" style="font-size: 1.1em;"></strong>
+          </div>
+
+          <div class="form-row">
+            <label for="form-decommission-reason">Motivo de la Baja</label>
+            <select id="form-decommission-reason" name="reason" required>
+                <option value="" disabled selected>Seleccione un motivo...</option>
+                <option value="Robo">Robo</option>
+                <option value="Hurto">Hurto</option>
+                <option value="Donación">Donación</option>
+                <option value="Destrucción">Destrucción</option>
+                <option value="Otro">Otro</option>
+            </select>
+          </div>
+          
+          <div class="form-row">
+            <label for="form-decommission-image">Imagen del Ítem (Estado Actual)</label>
+            <input type="file" id="form-decommission-image" name="decommission_image" accept="image/*" required />
+            <img id="decommissionImagePreview" src="#" alt="Vista previa" style="display: none; max-width: 100%; height: auto; margin-top: 15px;" />
+          </div>
+
+          <div class="form-row" style="justify-content: flex-end; flex-direction: row; gap: 10px;">
+            <button type="button" id="cancel-decommission-btn" class="button">Cancelar</button>
+            <button type="submit" class="button">Confirmar Baja</button>
+          </div>
+        </form>
+      </div>
+    </div>
     <script src="js/script.js" type="module" defer></script>
     <script src="js/theme-switcher.js" defer></script>
 </body>
