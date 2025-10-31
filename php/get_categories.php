@@ -9,16 +9,16 @@ try {
     // Se reemplaza la consulta a la base de datos por una lista fija de categorías.
     // Ahora puedes editar esta lista directamente para cambiar las opciones en el formulario.
     $categories = [
-        "Equipos Informáticos y Sistemas",
-        "Equipos Eléctricos",
         "Audiovisuales",
-        "Rodados",
+        "Elementos de Cocina",
+        "Elementos de señalizacion y carteleria",
+        "Equipos Eléctricos",
+        "Equipos Informáticos y Sistemas",
+        "Instrumental de Salud",
         "Maquinarias y Equipo Pesado",
         "Repuestos e insumos de alto valor",
-        "Instrumental de Salud",
-        "Elementos de señalizacion y carteleria",
-        "Elementos de Cocina",
-        "mubiliario",
+        "Rodados",
+        "mobiliario",
         
     ];
     // --- FIN DE LA MODIFICACIÓN ---
