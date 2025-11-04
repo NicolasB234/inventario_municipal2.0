@@ -382,6 +382,59 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         setupModalClosers();
 
+        // --- INICIO DE MODIFICACIÓN: VISTA PREVIA DE IMÁGENES ---
+        const itemImageInput = document.getElementById('form-itemImage');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+
+        if (itemImageInput && imagePreviewContainer) {
+            itemImageInput.addEventListener('change', function() {
+                // Limpiar vistas previas anteriores
+                imagePreviewContainer.innerHTML = ''; 
+                
+                if (this.files && this.files.length > 0) {
+                    // Iterar sobre todos los archivos seleccionados
+                    Array.from(this.files).forEach(file => {
+                        if (!file.type.startsWith('image/')){ return; } // Asegurarse de que sea una imagen
+
+                        const reader = new FileReader();
+                        
+                        reader.onload = function(e) {
+                            const imgWrapper = document.createElement('div');
+                            imgWrapper.className = 'preview-image-wrapper'; // Clase para CSS
+                            
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.className = 'preview-thumbnail'; // Clase para CSS
+                            
+                            imgWrapper.appendChild(img);
+                            imagePreviewContainer.appendChild(imgWrapper);
+                        }
+                        
+                        reader.readAsDataURL(file); // Leer el archivo como Data URL
+                    });
+                }
+            });
+        }
+
+        // Limpiar las vistas previas cuando el modal se cierra.
+        const modal = document.getElementById('modal-agregar-item');
+        const cancelBtn = document.getElementById('cancel-item-btn');
+        const closeBtn = modal.querySelector('.close-modal');
+
+        const clearImagePreviews = () => {
+            if (imagePreviewContainer) {
+                imagePreviewContainer.innerHTML = '';
+            }
+            // También resetear el input para que 'change' se dispare si se seleccionan los mismos archivos
+            if (itemImageInput) {
+                itemImageInput.value = ''; 
+            }
+        };
+
+        if (cancelBtn) cancelBtn.addEventListener('click', clearImagePreviews);
+        if (closeBtn) closeBtn.addEventListener('click', clearImagePreviews);
+        // --- FIN DE MODIFICACIÓN: VISTA PREVIA DE IMÁGENES ---
+
         const notificationBellButton = document.getElementById('notification-bell-btn');
         if (notificationBellButton) {
             notificationBellButton.addEventListener('click', toggleNotifPanel);

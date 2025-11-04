@@ -1346,3 +1346,39 @@ body.night-mode .notifications-list .notif-approved strong {
 .patribot-input button:hover {
   background: #005ec7;
 }
+/* --- INICIO DE MODIFICACIÓN: ESTILOS VISTA PREVIA FORMULARIO --- */
+
+/* Contenedor de vistas previas en el formulario */
+#imagePreviewContainer {
+    /* Estilos base ya definidos en el HTML, pero podemos asegurarlos aquí */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 5px; /* Pequeño espacio superior */
+}
+
+/* Contenedor individual de cada imagen */
+.preview-image-wrapper {
+    position: relative;
+    border: 1px solid #ddd; /* Borde sutil */
+    border-radius: 5px;     /* Bordes redondeados */
+    overflow: hidden;       /* Para que la imagen no se salga */
+    background-color: #f9f9f9; /* Fondo claro por si la imagen tarda en cargar */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Sombra ligera */
+}
+
+/* Miniatura de la imagen */
+.preview-thumbnail {
+    width: 100px;
+    height: 100px;
+    object-fit: cover; /* Asegura que la imagen cubra el espacio sin deformarse */
+    display: block;
+    transition: transform 0.2s ease; /* Efecto suave al pasar el mouse */
+}
+
+.preview-thumbnail:hover {
+    transform: scale(1.05); /* Agranda ligeramente la imagen al pasar el mouse */
+}
+
+/* --- FIN DE MODIFICACIÓN: ESTILOS VISTA PREVIA FORMULARIO --- */
