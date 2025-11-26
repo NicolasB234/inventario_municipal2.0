@@ -1,22 +1,16 @@
-// --- INICIO DE LA MODIFICACIÓN ---
-// Se elimina la importación innecesaria y errónea de 'statusOptions'.
 import { orgStructure } from './org-structure.js';
 import { displayInventory, setupModalClosers } from './inventory-functions.js';
 
 /**
  * Normaliza un texto: lo convierte a minúsculas y le quita los acentos.
- * Esto permite hacer búsquedas flexibles que ignoran tildes y mayúsculas.
- * @param {string} text El texto a normalizar.
- * @returns {string} El texto normalizado.
  */
 function normalizeText(text) {
     if (!text) return '';
     return text
         .toLowerCase()
-        .normalize("NFD") // Descompone los caracteres acentuados en letra + acento
-        .replace(/[\u0300-\u036f]/g, ""); // Elimina los acentos
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
 }
-// --- FIN DE LA MODIFICACIÓN ---
 
 const PHP_BASE_URL = 'php/';
 
@@ -43,7 +37,7 @@ function addNotificationToList(notif) {
         id: notif.id,
         message: notif.details,
         timestamp: notif.timestamp,
-        action_type: notif.action_type // Se añade el tipo de acción
+        action_type: notif.action_type
     });
     if (localNotifications.length > 20) localNotifications.pop();
 }
@@ -93,9 +87,10 @@ async function fetchUpdates() {
                     try {
                         const details = JSON.parse(notif.details);
                         if(details.itemId) {
-                            highlightItem(details.itemId);
+                            // Esta función podría estar en otro módulo, verificamos antes
+                            if (typeof highlightItem === 'function') highlightItem(details.itemId);
                         }
-                    } catch(e) { /* No es un JSON, ignorar */ }
+                    } catch(e) { }
                 }
             });
             shakeBell();
@@ -112,7 +107,7 @@ async function fetchUpdates() {
         if (data.refresh_inventory) {
             const selectedNodeElement = document.querySelector('#org-nav .node-content.selected');
             if (selectedNodeElement) {
-                selectedNodeElement.click(); // Simula un click para recargar la vista
+                selectedNodeElement.click();
             }
         }
     } catch (error) {
@@ -157,20 +152,16 @@ function toggleNotifPanel() {
              const date = new Date(notif.timestamp).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
              
              let colorClass = '';
-             // Se verifica primero si es 'aprobada' o 'agregada' para asignarle el color verde.
              if (notif.action_type.includes('approved') || notif.action_type.includes('added')) {
-                 colorClass = 'notif-approved'; // Verde para aprobadas
-             } 
-             // Si no es aprobada, se verifica si es una solicitud pendiente para el color rojo.
-             else if (notif.action_type === 'hacienda_add' || notif.action_type.includes('request')) {
-                 colorClass = 'notif-pending'; // Rojo para pendientes y rechazadas
+                 colorClass = 'notif-approved'; 
+             } else if (notif.action_type === 'hacienda_add' || notif.action_type.includes('request')) {
+                 colorClass = 'notif-pending'; 
              }
              let message = notif.message;
-             // Si el mensaje es un JSON (para los aprobados), lo extraemos
              try {
                  const details = JSON.parse(message);
                  if(details.message) message = details.message;
-             } catch(e) { /* No es JSON, usamos el texto plano */ }
+             } catch(e) { }
 
              notificationsHtml += `<p class="${colorClass}">[${date}] <strong>${message}</strong></p>`;
         });
@@ -198,6 +189,55 @@ function toggleNotifPanel() {
         document.addEventListener('click', closePanel);
     }, 0);
 }
+
+// --- ESTADÍSTICAS ---
+async function loadStatistics() {
+    const statsContainer = document.getElementById('stats-container');
+    if (!statsContainer) return;
+
+    statsContainer.innerHTML = '<p>Cargando estadísticas...</p>';
+
+    try {
+        const response = await fetch(`${PHP_BASE_URL}get_total_stats.php`);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            const stats = result.data;
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <h3>Total en Inventario</h3>
+                    <p>${stats.total_general}</p>
+                    <span>(Total General)</span>
+                </div>
+                
+                <div class="stat-card stat-apto">
+                    <h3><i class="fas fa-check-circle"></i> Apto</h3>
+                    <p>${stats.total_aptos}</p>
+                </div>
+
+                <div class="stat-card stat-no-apto">
+                    <h3><i class="fas fa-times-circle"></i> No Apto</h3>
+                    <p>${stats.total_no_aptos}</p>
+                </div>
+
+                <div class="stat-card stat-recuperable">
+                    <h3><i class="fas fa-tools"></i> No Apto Recuperable</h3>
+                    <p>${stats.total_recuperables}</p>
+                </div>
+
+                <div class="stat-card stat-baja">
+                    <h3><i class="fas fa-archive"></i> Baja</h3>
+                    <p>${stats.total_baja}</p>
+                </div>
+            `;
+        } else {
+            statsContainer.innerHTML = `<p class="error-message">Error al cargar estadísticas: ${result.message || 'Respuesta no válida.'}</p>`;
+        }
+    } catch (error) {
+        console.error('Error al cargar estadísticas:', error);
+        statsContainer.innerHTML = '<p class="error-message">Error de conexión al cargar las estadísticas.</p>';
+    }
+}
 async function handleLogin(username, password) {
     const formData = new FormData();
     formData.append('username', username);
@@ -211,7 +251,6 @@ async function handleLogin(username, password) {
     }
 }
 
-// CAMBIO: La función de registro ahora también envía si el usuario es admin
 async function handleRegister(username, password, areaId, isAdmin) {
     const formData = new FormData();
     formData.append('username', username);
@@ -285,6 +324,83 @@ document.addEventListener('DOMContentLoaded', async () => {
         const loginMessage = document.getElementById('login-message');
         const registerMessage = document.getElementById('register-message');
 
+        // --- AUTOCOMPLETADO DE USUARIO ---
+        const loginUsernameInput = document.getElementById('login-username');
+        
+        if (loginUsernameInput) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'input-wrapper';
+            loginUsernameInput.parentNode.insertBefore(wrapper, loginUsernameInput);
+            wrapper.appendChild(loginUsernameInput);
+
+            const suggestionsList = document.createElement('div');
+            suggestionsList.className = 'suggestions-list';
+            wrapper.appendChild(suggestionsList);
+
+            loginUsernameInput.addEventListener('input', async function() {
+                const query = this.value.trim();
+                suggestionsList.innerHTML = '';
+                suggestionsList.classList.remove('visible');
+
+                if (query.length < 2) return;
+
+                try {
+                    const response = await fetch(`${PHP_BASE_URL}search_users.php?q=${encodeURIComponent(query)}`);
+                    const users = await response.json();
+
+                    if (users.length > 0) {
+                        users.forEach(user => {
+                            const item = document.createElement('div');
+                            item.className = 'suggestion-item';
+                            item.textContent = user.username;
+                            
+                            item.addEventListener('click', () => {
+                                loginUsernameInput.value = user.username;
+                                suggestionsList.innerHTML = '';
+                                suggestionsList.classList.remove('visible');
+                            });
+
+                            suggestionsList.appendChild(item);
+                        });
+                        suggestionsList.classList.add('visible');
+                    }
+                } catch (error) {
+                    console.error('Error buscando usuarios:', error);
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!wrapper.contains(e.target)) {
+                    suggestionsList.classList.remove('visible');
+                }
+            });
+        }
+
+        // --- MOSTRAR/OCULTAR CONTRASEÑA (EL OJITO) ---
+        function addPasswordToggle(inputId) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            if (getComputedStyle(input.parentNode).position === 'static') {
+                input.parentNode.style.position = 'relative';
+            }
+
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-eye password-toggle';
+            icon.title = "Mostrar contraseña";
+            
+            input.parentNode.insertBefore(icon, input.nextSibling);
+
+            icon.addEventListener('click', () => {
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                icon.className = isPassword ? 'fas fa-eye-slash password-toggle' : 'fas fa-eye password-toggle';
+            });
+        }
+
+        addPasswordToggle('login-password');
+        addPasswordToggle('register-password');
+
         document.querySelectorAll('.toggle-form').forEach(button => {
             button.addEventListener('click', () => {
                 loginForm.classList.toggle('active');
@@ -317,35 +433,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         const hiddenAreaIdInput = document.getElementById('register-area-id');
         const allAreas = getAllInventoryNodes(orgStructure);
 
-        searchInput.addEventListener('input', () => {
-            const query = normalizeText(searchInput.value);
-            searchResults.innerHTML = '';
-            hiddenAreaIdInput.value = '';
-            if (query.length < 2) {
-                searchResults.style.display = 'none';
-                return;
-            }
-            const filteredAreas = allAreas.filter(area => normalizeText(area.name).includes(query));
-            if (filteredAreas.length > 0) {
-                filteredAreas.forEach(area => {
-                    const item = document.createElement('div');
-                    item.className = 'result-item';
-                    item.textContent = area.name;
-                    item.addEventListener('click', () => {
-                        searchInput.value = area.name;
-                        hiddenAreaIdInput.value = area.id;
-                        searchResults.style.display = 'none';
+        // PROTECCIÓN PARA SEARCH INPUT (Causa del error probable)
+        if (searchInput && searchResults) {
+            searchInput.addEventListener('input', () => {
+                const query = normalizeText(searchInput.value);
+                searchResults.innerHTML = '';
+                hiddenAreaIdInput.value = '';
+                if (query.length < 2) {
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                const filteredAreas = allAreas.filter(area => normalizeText(area.name).includes(query));
+                if (filteredAreas.length > 0) {
+                    filteredAreas.forEach(area => {
+                        const item = document.createElement('div');
+                        item.className = 'result-item';
+                        item.textContent = area.name;
+                        item.addEventListener('click', () => {
+                            searchInput.value = area.name;
+                            hiddenAreaIdInput.value = area.id;
+                            searchResults.style.display = 'none';
+                        });
+                        searchResults.appendChild(item);
                     });
-                    searchResults.appendChild(item);
-                });
-                searchResults.style.display = 'block';
-            } else {
-                searchResults.style.display = 'none';
-            }
-        });
+                    searchResults.style.display = 'block';
+                } else {
+                    searchResults.style.display = 'none';
+                }
+            });
+        }
 
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.search-container')) {
+            if (searchResults && !e.target.closest('.search-container')) {
                 searchResults.style.display = 'none';
             }
         });
@@ -354,14 +473,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const username = document.getElementById('register-username').value.trim();
             const password = document.getElementById('register-password').value.trim();
             const areaId = hiddenAreaIdInput.value;
-            // CAMBIO: Leer el valor del checkbox
             const isAdmin = document.getElementById('register-is-admin').checked;
 
             if (!username || !password || !areaId) {
                 registerMessage.textContent = 'Por favor, rellene todos los campos (incluyendo el área).';
                 return;
             }
-            // CAMBIO: Enviar el valor del checkbox a la función
             const result = await handleRegister(username, password, areaId, isAdmin);
             registerMessage.textContent = result.message;
             registerMessage.style.color = result.success ? '#2ecc71' : '#e74c3c';
@@ -382,58 +499,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         setupModalClosers();
 
-        // --- INICIO DE MODIFICACIÓN: VISTA PREVIA DE IMÁGENES ---
         const itemImageInput = document.getElementById('form-itemImage');
         const imagePreviewContainer = document.getElementById('imagePreviewContainer');
 
         if (itemImageInput && imagePreviewContainer) {
             itemImageInput.addEventListener('change', function() {
-                // Limpiar vistas previas anteriores
                 imagePreviewContainer.innerHTML = ''; 
-                
                 if (this.files && this.files.length > 0) {
-                    // Iterar sobre todos los archivos seleccionados
                     Array.from(this.files).forEach(file => {
-                        if (!file.type.startsWith('image/')){ return; } // Asegurarse de que sea una imagen
-
+                        if (!file.type.startsWith('image/')){ return; }
                         const reader = new FileReader();
-                        
                         reader.onload = function(e) {
                             const imgWrapper = document.createElement('div');
-                            imgWrapper.className = 'preview-image-wrapper'; // Clase para CSS
-                            
+                            imgWrapper.className = 'preview-image-wrapper'; 
                             const img = document.createElement('img');
                             img.src = e.target.result;
-                            img.className = 'preview-thumbnail'; // Clase para CSS
-                            
+                            img.className = 'preview-thumbnail'; 
                             imgWrapper.appendChild(img);
                             imagePreviewContainer.appendChild(imgWrapper);
                         }
-                        
-                        reader.readAsDataURL(file); // Leer el archivo como Data URL
+                        reader.readAsDataURL(file); 
                     });
                 }
             });
         }
 
-        // Limpiar las vistas previas cuando el modal se cierra.
         const modal = document.getElementById('modal-agregar-item');
         const cancelBtn = document.getElementById('cancel-item-btn');
-        const closeBtn = modal.querySelector('.close-modal');
+        const closeBtn = modal ? modal.querySelector('.close-modal') : null;
 
         const clearImagePreviews = () => {
-            if (imagePreviewContainer) {
-                imagePreviewContainer.innerHTML = '';
-            }
-            // También resetear el input para que 'change' se dispare si se seleccionan los mismos archivos
-            if (itemImageInput) {
-                itemImageInput.value = ''; 
-            }
+            if (imagePreviewContainer) imagePreviewContainer.innerHTML = '';
+            if (itemImageInput) itemImageInput.value = ''; 
         };
 
         if (cancelBtn) cancelBtn.addEventListener('click', clearImagePreviews);
         if (closeBtn) closeBtn.addEventListener('click', clearImagePreviews);
-        // --- FIN DE MODIFICACIÓN: VISTA PREVIA DE IMÁGENES ---
 
         const notificationBellButton = document.getElementById('notification-bell-btn');
         if (notificationBellButton) {
@@ -452,6 +553,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (activeSection) activeSection.classList.add('active');
             const activeButton = document.getElementById(`show-${viewId}-btn`);
             if (activeButton) activeButton.classList.add('active');
+
+            if (viewId === 'stats-view') {
+                loadStatistics();
+            }
         }
 
         viewButtons.forEach(button => {
@@ -480,7 +585,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 nodeNameSpan.textContent = node.name;
                 nodeNameSpan.className = 'node-name';
 
-                // Se usa una clase para que CSS maneje el ícono, en lugar de fa-bars
                 if (node.children && node.children.length > 0) {
                     li.classList.add('has-children');
                 }
@@ -572,7 +676,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 requestsButton.onclick = () => { window.location.href = 'solicitudes.html'; };
                 container.prepend(requestsButton);
 
-                // --- INICIO DE CÓDIGO NUEVO ---
                 const bajasButton = document.createElement('button');
                 bajasButton.id = 'bajas-btn';
                 bajasButton.innerHTML = '<i class="fas fa-archive"></i>';
@@ -580,7 +683,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 bajasButton.className = "header-btn";
                 bajasButton.onclick = () => { window.location.href = 'bajas.html'; };
                 container.prepend(bajasButton);
-                // --- FIN DE CÓDIGO NUEVO ---
             }
         }
         
@@ -599,6 +701,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             contentTitle.textContent = welcomeMessage;
 
             setupHeaderButtons();
+
+            const importBtn = document.getElementById('import-btn-header');
+            const importFileInput = document.getElementById('xlsx-file-input-header');
+            const importManagementLink = document.querySelector('#header-actions-menu a[href="importaciones.html"]');
+
+            if (!isAdmin) {
+                if (importBtn) importBtn.style.display = 'none';
+                if (importFileInput) importFileInput.style.display = 'none';
+                if (importManagementLink) importManagementLink.style.display = 'none';
+            }
 
             const haciendaAreaId = 'sec-hacienda'; 
             if (isAdmin || userAreaId === haciendaAreaId) {
@@ -667,23 +779,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
         
-        // --- INICIO DE LA SECCIÓN ACTUALIZADA ---
-        // 2. Lógica para la galería de imágenes con navegación (VERSIÓN ACTUALIZADA)
         const imageModal = document.getElementById('image-modal');
-        let galleryItems = []; // Lista de todos los ítems de la galería en la vista actual
-        let currentItemIndex = -1; // Índice del ítem actual que se está viendo
+        let galleryItems = []; 
+        let currentItemIndex = -1; 
         
-        let currentItemImages = []; // Array con las URLs de las imágenes del ítem actual
-        let currentImageSubIndex = 0; // Índice de la foto que se está viendo dentro del ítem actual
+        let currentItemImages = []; 
+        let currentImageSubIndex = 0; 
 
-        // Función para actualizar el contenido del modal con los datos de un ítem
         function updateModalContent(itemIndex) {
             if (itemIndex < 0 || itemIndex >= galleryItems.length) return;
             
             currentItemIndex = itemIndex;
             const itemData = galleryItems[itemIndex].dataset;
             
-            // Llenar los detalles del ítem (nombre, descripción, etc.)
             document.getElementById('modal-item-name').textContent = itemData.name;
             document.getElementById('modal-item-description').textContent = itemData.description;
             document.getElementById('modal-item-category').textContent = itemData.category;
@@ -691,21 +799,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('modal-item-status').textContent = itemData.status;
             document.getElementById('modal-item-date').textContent = itemData.date;
             
-            // Decidir cómo manejar las imágenes
             const imagePathData = itemData.imgSrc;
             const prevBtn = imageModal.querySelector('.prev-gallery-btn');
             const nextBtn = imageModal.querySelector('.next-gallery-btn');
 
             try {
-                // Intentar interpretar como un array de imágenes
                 currentItemImages = JSON.parse(imagePathData);
-                if (!Array.isArray(currentItemImages)) throw new Error(); // Forzar el catch si no es un array
+                if (!Array.isArray(currentItemImages)) throw new Error(); 
             } catch (e) {
-                // Si falla, es una sola imagen, la envolvemos en un array
                 currentItemImages = [imagePathData];
             }
 
-            // Mostrar u ocultar los botones de navegación de imágenes
             if (currentItemImages.length > 1) {
                 prevBtn.style.display = 'block';
                 nextBtn.style.display = 'block';
@@ -714,18 +818,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 nextBtn.style.display = 'none';
             }
             
-            // Empezar mostrando la primera imagen
             currentImageSubIndex = 0;
             updateModalImage();
         }
 
-        // Función para cambiar la imagen mostrada dentro del modal
         function updateModalImage() {
             const modalImageElement = document.getElementById('modal-image');
             if (currentItemImages.length > 0) {
                 modalImageElement.src = currentItemImages[currentImageSubIndex];
             } else {
-                modalImageElement.src = ''; // O una imagen placeholder
+                modalImageElement.src = ''; 
             }
         }
 
@@ -741,7 +843,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                  if (e.target === imageModal) closeModal();
             });
 
-            // Nueva lógica para los botones: navegan entre FOTOS, no entre ítems.
             if(prevBtn) {
                 prevBtn.addEventListener('click', () => {
                     currentImageSubIndex = (currentImageSubIndex - 1 + currentItemImages.length) % currentItemImages.length;
@@ -757,13 +858,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
         
-        // El listener para abrir el modal no cambia mucho
         const galleryView = document.getElementById('gallery-view');
         if(galleryView) {
             galleryView.addEventListener('click', (event) => {
                 const card = event.target.closest('.gallery-card');
                 if (card && imageModal) {
-                    // Obtenemos la lista actualizada de ítems en la galería
                     galleryItems = Array.from(galleryView.querySelectorAll('.gallery-card'));
                     const clickedItemIndex = galleryItems.findIndex(item => item === card);
                     
@@ -773,7 +872,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
         
-// --- 🔧 INICIO DE PÁTRIBOT CHATBOT GLOBAL ---
+// --- PÁTRIBOT CHATBOT GLOBAL ---
 
 const patribotButton = document.createElement('div');
 patribotButton.id = 'patribot-btn';
@@ -809,36 +908,33 @@ patribotButton.addEventListener('click', () => {
   patribotWindow.classList.toggle('visible');
 });
 
-document.getElementById('close-patribot').addEventListener('click', () => {
-  patribotWindow.classList.remove('visible');
-});
+// PROTECCIÓN: Verificar que el botón cerrar exista antes de agregar listener
+const closePatribotBtn = document.getElementById('close-patribot');
+if (closePatribotBtn) {
+    closePatribotBtn.addEventListener('click', () => {
+        patribotWindow.classList.remove('visible');
+    });
+}
 
 const patribotInput = document.getElementById('patribot-input-text');
 const patribotSend = document.getElementById('patribot-send');
 const patribotMessages = document.getElementById('patribot-messages');
 
-// ✅ AQUÍ PODÉS EDITAR Y PERSONALIZAR LAS PREGUNTAS Y RESPUESTAS DE PÁTRIBOT
-// ---------------------------------------------------------------------------
 const patribotResponses = {
-  // --- 1️⃣ Cargar un ítem ---
   "1": "🟢 <b>Cómo cargar un ítem:</b><br>1. Ingresá al panel de tu área.<br>2. Hacé clic en el botón <b>“Agregar ítem”</b>.<br>3. Completá los campos requeridos (nombre, categoría, cantidad, descripción, etc.).<br>4. Presioná <b>Guardar</b> para finalizar la carga.",
   "cargar": "🟢 <b>Cómo cargar un ítem:</b><br>1. Ingresá al panel de tu área.<br>2. Hacé clic en el botón <b>“Agregar ítem”</b>.<br>3. Completá los campos requeridos (nombre, categoría, cantidad, descripción, etc.).<br>4. Presioná <b>Guardar</b> para finalizar la carga.",
   "nuevo ítem": "🟢 <b>Cómo cargar un ítem:</b><br>1. Ingresá al panel de tu área.<br>2. Hacé clic en el botón <b>“Agregar ítem”</b>.<br>3. Completá los campos requeridos (nombre, categoría, cantidad, descripción, etc.).<br>4. Presioná <b>Guardar</b> para finalizar la carga.",
 
-  // --- 2️⃣ Editar un ítem ---
   "2": "🟡 <b>Cómo editar un ítem:</b><br>1. Buscá el ítem en tu listado o usá el buscador.<br>2. Presioná el ícono <b>✏️ Editar</b> junto al registro que querés modificar.<br>3. Cambiá los datos necesarios y luego hacé clic en <b>Guardar cambios</b>.",
   "editar": "🟡 <b>Cómo editar un ítem:</b><br>1. Buscá el ítem en tu listado o usá el buscador.<br>2. Presioná el ícono <b>✏️ Editar</b> junto al registro que querés modificar.<br>3. Cambiá los datos necesarios y luego hacé clic en <b>Guardar cambios</b>.",
   "modificar": "🟡 <b>Cómo editar un ítem:</b><br>1. Buscá el ítem en tu listado o usá el buscador.<br>2. Presioná el ícono <b>✏️ Editar</b> junto al registro que querés modificar.<br>3. Cambiá los datos necesarios y luego hacé clic en <b>Guardar cambios</b>.",
 
-  // --- 3️⃣ Imprimir un ítem ---
   "3": "🖨️ <b>Cómo imprimir un ítem:</b><br>1. Filtrá los ítems que querés imprimir o simplemente imprimí todos los ítems de tu área.<br>2. Presioná el ícono <b>🧾</b> que aparece junto a las notificaciones y elegí la opción <b>PDF INFORME</b>.<br>3. Se abrirá una vista previa o un PDF listo para descargar o imprimir.",
   "imprimir": "🖨️ <b>Cómo imprimir un ítem:</b><br>1. Filtrá los ítems que querés imprimir o simplemente imprimí todos los ítems de tu área.<br>2. Presioná el ícono <b>🧾</b> que aparece junto a las notificaciones y elegí la opción <b>PDF INFORME</b>.<br>3. Se abrirá una vista previa o un PDF listo para descargar o imprimir.",
 
-  // --- 4️⃣ Descargar protocolo ---
   "4": "📄 <b>Descargar protocolo:</b><br>Podés descargar el documento oficial del <b>Protocolo de Carga</b> desde el siguiente enlace:<br><br><a href='uploads/PROTOCOLO DE CARGA.docx' download class='patribot-download' target='_blank'>⬇️ Descargar Protocolo</a>",
   "protocolo": "📄 <b>Descargar protocolo:</b><br>Podés descargar el documento oficial del <b>Protocolo de Carga</b> desde el siguiente enlace:<br><br><a href='uploads/PROTOCOLO DE CARGA.docx' download class='patribot-download' target='_blank'>⬇️ Descargar Protocolo</a>"
 };
-// ---------------------------------------------------------------------------
 
 function addPatribotMessage(sender, text) {
   const msgDiv = document.createElement('div');
@@ -866,19 +962,23 @@ function processPatribotMessage(userText) {
   addPatribotMessage("bot", foundResponse);
 }
 
-patribotSend.addEventListener('click', () => {
-  const text = patribotInput.value.trim();
-  if (!text) return;
-  addPatribotMessage("user", text);
-  patribotInput.value = "";
-  setTimeout(() => processPatribotMessage(text), 500);
-});
+// PROTECCIÓN: Verificar que el botón enviar exista
+if (patribotSend) {
+    patribotSend.addEventListener('click', () => {
+        const text = patribotInput.value.trim();
+        if (!text) return;
+        addPatribotMessage("user", text);
+        patribotInput.value = "";
+        setTimeout(() => processPatribotMessage(text), 500);
+    });
+}
 
-patribotInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') patribotSend.click();
-});
-
-// --- 🔧 FIN DE PÁTRIBOT CHATBOT GLOBAL ---
+// PROTECCIÓN: Verificar que el input exista
+if (patribotInput) {
+    patribotInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && patribotSend) patribotSend.click();
+    });
+}
 
         const orgSearchInput = document.getElementById('org-search-input');
         if (orgSearchInput) {
@@ -890,20 +990,18 @@ patribotInput.addEventListener('keypress', (e) => {
                     const nodeNameElement = li.querySelector('.node-content > span.node-name');
                     const nodeName = nodeNameElement ? normalizeText(nodeNameElement.textContent) : '';
                     
-                    // Si no hay término de búsqueda, mostrar todo y colapsar
                     if (!searchTerm) {
                         li.style.display = "";
                         li.classList.remove('expanded');
                         return;
                     }
 
-                    // Si el nombre coincide, mostrarlo y expandir sus padres
                     if (nodeName.includes(searchTerm)) {
                         li.style.display = "";
                         let parent = li.parentElement.closest('li');
                         while(parent) {
                             parent.style.display = "";
-                            parent.classList.add('expanded'); // Solo se añade la clase, no se toca el ícono
+                            parent.classList.add('expanded'); 
                             parent = parent.parentElement.closest('li');
                         }
                     } else {

@@ -68,15 +68,14 @@ async function loadCategories() {
     }
 }
 
-// --- INICIO DE LA MODIFICACIÓN ---
-// Se añade la opción 'De Baja' a la lista de estados.
+// --- MANTENEMOS EL LISTADO GLOBAL DE ESTADOS (INCLUYENDO "DE BAJA") ---
 export const statusOptions = [
   { value: 'A', label: 'Apto' },
   { value: 'N', label: 'No Apto' },
   { value: 'R', label: 'No Apto Recuperable' },
-  { value: 'D', label: 'De Baja' }, // <-- LÍNEA AÑADIDA
+  { value: 'D', label: 'De Baja' },
 ];
-// --- FIN DE LA MODIFICACIÓN ---
+// --- FIN DEL LISTADO GLOBAL ---
 
 
 function getShortNameNodesMap() {
@@ -237,8 +236,12 @@ export async function showItemForm(node, item = null) {
     const categorySelect = form.querySelector('[name="category"]');
     categorySelect.innerHTML = dynamicCategories.map(cat => `<option value="${cat}" ${isEditing && item && item.category === cat ? 'selected' : ''}>${cat}</option>`).join('');
 
+    // --- INICIO DE LA MODIFICACIÓN (Ocultar "De Baja" en formulario) ---
     const statusSelect = form.querySelector('[name="status"]');
-    statusSelect.innerHTML = statusOptions.map(option => `<option value="${option.value}" ${isEditing && item && item.status === option.value ? 'selected' : ''}>${option.label}</option>`).join('');
+    // Filtramos las opciones para que "De Baja" (valor 'D') no aparezca en este formulario
+    const formStatusOptions = statusOptions.filter(option => option.value !== 'D');
+    statusSelect.innerHTML = formStatusOptions.map(option => `<option value="${option.value}" ${isEditing && item && item.status === option.value ? 'selected' : ''}>${option.label}</option>`).join('');
+    // --- FIN DE LA MODIFICACIÓN ---
 
     const imagePreview = document.getElementById('imagePreview');
     const imageInput = document.getElementById('form-itemImage');
@@ -608,6 +611,7 @@ export async function displayInventory(node, isAdmin = false, page = 1, filters 
 
         if (result.success) {
             window.currentInventoryContext = { node, items: result.data, isAdmin };
+            // Pasamos 'isAdmin' a la función que construye la UI de filtros
             await setupInventoryUI(node, result.data, isAdmin);
             
             currentTablePage = page;
@@ -636,6 +640,18 @@ async function setupInventoryUI(node, items, isAdmin) {
     await loadCategories();
     window.currentInventoryContext = { node, items, isAdmin };
 
+    // --- INICIO DE LA MODIFICACIÓN (Filtro de estado dinámico) ---
+    // Generar dinámicamente las opciones de estado para el filtro
+    let filterStatusHtml = '';
+    statusOptions.forEach(option => {
+        // Si el usuario NO es admin Y la opción es "De Baja", no la mostramos
+        if (!isAdmin && option.value === 'D') {
+            return; 
+        }
+        filterStatusHtml += `<option value="${option.value}">${option.label}</option>`;
+    });
+    // --- FIN DE LA MODIFICACIÓN ---
+
     controlsContainer.innerHTML = `
         <div class="inventory-controls">
             <button id="add-item-btn"><i class="fas fa-plus"></i> Agregar Item</button>
@@ -656,7 +672,14 @@ async function setupInventoryUI(node, items, isAdmin) {
             <div class="filter-row"><label for="filter-codigo">Buscar por Código:</label><input type="text" id="filter-codigo" placeholder="Código del ítem"></div>
             <div class="filter-row"><label for="filter-name">Buscar por Nombre:</label><input type="text" id="filter-name" placeholder="Nombre del ítem"></div>
             <div class="filter-row"><label for="filter-category">Categoría:</label><select id="filter-category"><option value="">Todas</option>${dynamicCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}</select></div>
-            <div class="filter-row"><label for="filter-status">Estado:</label><select id="filter-status"><option value="">Todos</option>${statusOptions.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}</select></div>
+            
+            <div class="filter-row">
+                <label for="filter-status">Estado:</label>
+                <select id="filter-status">
+                    <option value="">Todos</option>
+                    ${filterStatusHtml}
+                </select>
+            </div>
             <div class="filter-row"><label for="filter-date-from">Incorporado Desde:</label><input type="date" id="filter-date-from"></div>
             <div class="filter-row"><label for="filter-date-to">Incorporado Hasta:</label><input type="date" id="filter-date-to"></div>
             <div class="filter-actions">

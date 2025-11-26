@@ -151,11 +151,11 @@ export const orgStructure = [
                 children: [
                     { id: 'subsec-servicios-publicos', name: 'Subsecretaría de Servicios Públicos', type: 'subsecretaria', children: [] },
                     { id: 'sub-barrido-limpieza', name: 'Subdirección de Barrido y Limpieza', type: 'subdireccion', children: [] },
-                    { id: 'dir-palmares', name: 'Dirección de Palmares', type: 'direccion', children: [] },
+                    // CORRECCIÓN AQUÍ: 'dir-plamares' en lugar de 'dir-palmares'
+                    { id: 'dir-plamares', name: 'Dirección de Plamares', type: 'direccion', children: [] },
                     { id: 'coord-corte-pasto', name: 'Coordinación de Corte de Pasto, Poda y Recolección', type: 'coordinacion', children: [] },
                     { id: 'coord-infra-eventos', name: 'Coordinación de Infraestructura de Eventos', type: 'coordinacion', children: [] },
-                    { id: 'Plamares', name: 'Plamares', type: 'Plamares', children: [] },
-
+                    // ELIMINADO: Entrada duplicada 'Plamares'
                 ]
             },
             {
