@@ -131,7 +131,7 @@ try {
         $stmt_request = $conn->prepare(
             "INSERT INTO pending_actions (user_id, username, action_type, item_id, action_data, status) VALUES (?, ?, 'decommission', ?, ?, 'pending')"
         );
-        $stmt_request->bind_param("is_is", $user_id, $username, $item_id, $action_data);
+        $stmt_request->bind_param("isis", $user_id, $username, $item_id, $action_data);
         $stmt_request->execute();
         $stmt_request->close();
 

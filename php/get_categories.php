@@ -14,6 +14,7 @@ try {
         "Elementos de señalizacion y carteleria",
         "Equipos Eléctricos",
         "Equipos Informáticos y Sistemas",
+        "Herramientas",
         "Instrumental de Salud",
         "Maquinarias y Equipo Pesado",
         "Repuestos e insumos de alto valor",
