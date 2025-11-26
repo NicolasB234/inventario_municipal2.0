@@ -1381,4 +1381,128 @@ body.night-mode .notifications-list .notif-approved strong {
     transform: scale(1.05); /* Agranda ligeramente la imagen al pasar el mouse */
 }
 
-/* --- FIN DE MODIFICACIÓN: ESTILOS VISTA PREVIA FORMULARIO --- */
+/* --- Autocompletado Login --- */
+.input-wrapper {
+    position: relative; /* Necesario para posicionar la lista */
+}
+
+.suggestions-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 0 0 5px 5px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: none; /* Oculto por defecto */
+}
+
+.suggestions-list.visible {
+    display: block;
+}
+
+.suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    color: #333;
+    font-size: 0.95em;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background-color: #f0f0f0;
+    color: #000;
+}
+
+/* --- Icono Ver Contraseña (Ojito) --- */
+.password-toggle {
+    position: absolute;
+    right: 15px; /* Ajusta si queda muy pegado al borde */
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #666; /* Color del icono */
+    z-index: 10;
+    font-size: 1rem;
+    transition: color 0.3s;
+}
+
+.password-toggle:hover {
+    color: #333;
+}
+
+/* Asegurar que el texto no se escriba encima del icono */
+.input-box input[type="password"],
+.input-box input[type="text"] {
+    padding-right: 40px !important;
+}
+
+/* --- Estilos para la Vista de Estadísticas --- */
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.stat-card {
+    background-color: var(--background-color-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.stat-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.2em;
+    color: var(--text-color-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stat-card p {
+    margin: 0;
+    font-size: 2.8em;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.stat-card span {
+    font-size: 0.9em;
+    color: var(--text-color-light);
+    margin-top: 5px;
+    display: block;
+}
+
+/* Colores específicos */
+.stat-card.stat-apto h3 { color: #2ecc71; }
+.stat-card.stat-apto p { color: #2ecc71; }
+
+.stat-card.stat-recuperable h3 { color: #f39c12; }
+.stat-card.stat-recuperable p { color: #f39c12; }
+
+.stat-card.stat-no-apto h3 { color: #e74c3c; }
+.stat-card.stat-no-apto p { color: #e74c3c; }
+
+.stat-card.stat-baja h3 { color: #7f8c8d; }
+.stat-card.stat-baja p { color: #7f8c8d; }
+
+.stat-card.stat-pending h3 { color: #3498db; }
+.stat-card.stat-pending p { color: #3498db; }
